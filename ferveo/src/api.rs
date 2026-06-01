@@ -3,9 +3,10 @@ use std::{collections::HashMap, fmt, io};
 use ark_poly::{EvaluationDomain, GeneralEvaluationDomain};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ferveo_common::serialization;
+use ferveo_tdec::bls12_381 as tdec_bls12_381;
 pub use ferveo_tdec::{
     DomainPoint,
-    api::{
+    bls12_381::{
         DecryptionSharePrecomputed, E, Fr, G1Affine, G1Prepared, G2Affine,
         SecretBox, prepare_combine_simple, share_combine_precomputed,
         share_combine_simple,
@@ -54,7 +55,7 @@ pub fn encrypt(
 ) -> Result<Ciphertext> {
     let mut rng = thread_rng();
     let ciphertext =
-        ferveo_tdec::api::encrypt(message, aad, &public_key.0, &mut rng)?;
+        tdec_bls12_381::encrypt(message, aad, &public_key.0, &mut rng)?;
     Ok(Ciphertext(ciphertext))
 }
 
@@ -63,7 +64,7 @@ pub fn decrypt_with_shared_secret(
     aad: &[u8],
     shared_secret: &SharedSecret,
 ) -> Result<Vec<u8>> {
-    ferveo_tdec::api::decrypt_with_shared_secret(
+    tdec_bls12_381::decrypt_with_shared_secret(
         &ciphertext.0,
         aad,
         &shared_secret.0,
@@ -72,7 +73,7 @@ pub fn decrypt_with_shared_secret(
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Eq)]
-pub struct Ciphertext(ferveo_tdec::api::Ciphertext);
+pub struct Ciphertext(tdec_bls12_381::Ciphertext);
 
 impl Ciphertext {
     pub fn header(&self) -> Result<CiphertextHeader> {
@@ -85,7 +86,7 @@ impl Ciphertext {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct CiphertextHeader(ferveo_tdec::api::CiphertextHeader);
+pub struct CiphertextHeader(tdec_bls12_381::CiphertextHeader);
 
 /// The ferveo variant to use for the decryption share derivation.
 #[derive(
@@ -385,7 +386,7 @@ impl AggregatedTranscript {
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecryptionShareSimple {
-    share: ferveo_tdec::api::DecryptionShareSimple,
+    share: tdec_bls12_381::DecryptionShareSimple,
     #[serde_as(as = "serialization::SerdeAs")]
     domain_point: DomainPoint<E>,
 }
@@ -401,7 +402,7 @@ pub fn combine_shares_simple(shares: &[DecryptionShareSimple]) -> SharedSecret {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SharedSecret(pub ferveo_tdec::api::SharedSecret<E>);
+pub struct SharedSecret(pub ferveo_tdec::SharedSecret<E>);
 
 #[cfg(test)]
 mod test_ferveo_api {

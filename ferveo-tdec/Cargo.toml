@@ -11,10 +11,6 @@ readme = "README.md"
 [lib]
 bench = false
 
-[features]
-test-common = []
-api = []
-
 [dependencies]
 ark-bls12-381 = { workspace = true }
 ark-ec = { workspace = true }
@@ -53,3 +49,8 @@ required-features = ["test-common"]
 name = "arkworks"
 path = "benches/arkworks.rs"
 harness = false
+
+[features]
+api = ["bls12_381"]
+bls12_381 = []
+test-common = []

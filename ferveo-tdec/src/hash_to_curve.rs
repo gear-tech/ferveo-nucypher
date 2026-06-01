@@ -7,16 +7,19 @@ use ark_ec::hashing::{
 use ark_ff::field_hashers::DefaultFieldHasher;
 use sha2::Sha256;
 
+/// Domain separation tag for RFC9380 BLS12-381 G2 hash-to-curve.
+pub const HTP_BLS12381_G2_DST: &[u8] =
+    b"QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_RO_";
+
 /// Hash to BLS12-381 G2 per RFC9380 with DST
 /// `QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_RO_`.
 /// Uses ark-ec native SSWU map + Wahby–Boneh isogeny.
 pub fn htp_bls12381_g2(msg: &[u8]) -> ark_bls12_381::G2Affine {
-    let dst = b"QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_RO_";
     let hasher = MapToCurveBasedHasher::<
         ark_bls12_381::G2Projective,
         DefaultFieldHasher<Sha256, 128>,
         WBMap<ark_bls12_381::g2::Config>,
-    >::new(dst)
+    >::new(HTP_BLS12381_G2_DST)
     .expect("hash-to-curve hasher init");
     hasher.hash(msg).expect("hash-to-curve")
 }

@@ -1,34 +1,41 @@
 #![warn(rust_2018_idioms)]
 use ark_ec::pairing::Pairing;
 
-// TODO: Use explicit imports - #194
-pub mod ciphertext;
-pub mod combine;
-pub mod context;
-pub mod decryption;
-pub mod hash_to_curve;
-pub mod key_share;
-pub mod secret_box;
+mod ciphertext;
+mod combine;
+mod context;
+mod decryption;
+mod hash_to_curve;
+mod key_share;
+mod secret_box;
 
-// TODO: Only show the public API, tpke::api
-// use ciphertext::*;
-// use combine::*;
-// use context::*;
-// use decryption::*;
-// use hash_to_curve::*;
-// use key_share::*;
-// use refresh::*;
+pub use ciphertext::{
+    Ciphertext, CiphertextHeader, decrypt_symmetric,
+    decrypt_with_shared_secret, encrypt,
+};
+pub use combine::{
+    SharedSecret, lagrange_basis_at, prepare_combine_simple,
+    share_combine_precomputed, share_combine_simple,
+};
+pub use context::{
+    PrivateDecryptionContextSimple, PublicDecryptionContextSimple, SetupParams,
+};
+pub use decryption::{
+    DecryptionSharePrecomputed, DecryptionShareSimple, ValidatorShareChecksum,
+    verify_decryption_shares_simple,
+};
+pub use hash_to_curve::{HTP_BLS12381_G2_DST, htp_bls12381_g2};
+pub use key_share::{
+    BlindedKeyShare, DkgPublicKey, PrivateKeyShare, ShareCommitment,
+};
+pub use secret_box::SecretBox;
 
-pub use ciphertext::*;
-pub use combine::*;
-pub use context::*;
-pub use decryption::*;
-pub use hash_to_curve::*;
-pub use key_share::*;
-pub use secret_box::*;
+#[cfg(feature = "bls12_381")]
+pub mod bls12_381;
 
 #[cfg(feature = "api")]
-pub mod api;
+#[deprecated(note = "use ferveo_tdec::bls12_381 instead")]
+pub use bls12_381 as api;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -213,7 +220,7 @@ mod tests {
     use rand::seq::IteratorRandom;
 
     use crate::{
-        api::DecryptionSharePrecomputed,
+        DecryptionSharePrecomputed,
         test_common::{create_shared_secret_simple, setup_simple, *},
     };
 
@@ -369,7 +376,7 @@ mod tests {
                     )
                     .unwrap()
             })
-            .collect::<Vec<DecryptionSharePrecomputed>>();
+            .collect::<Vec<DecryptionSharePrecomputed<_>>>();
 
         let shared_secret = share_combine_precomputed::<E>(&decryption_shares);
         test_ciphertext_validation_fails(
