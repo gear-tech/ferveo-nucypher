@@ -8,7 +8,7 @@ pub use ferveo_tdec::{
     DomainPoint,
     bls12_381::{
         DecryptionSharePrecomputed, E, Fr, G1Affine, G1Prepared, G2Affine,
-        SecretBox, prepare_combine_simple, share_combine_precomputed,
+        prepare_combine_simple, share_combine_precomputed,
         share_combine_simple,
     },
 };
@@ -48,19 +48,19 @@ pub fn from_bytes<T: CanonicalDeserialize>(bytes: &[u8]) -> Result<T> {
     Ok(item)
 }
 
-pub fn encrypt(
-    message: SecretBox<Vec<u8>>,
+pub fn encrypt<T: AsRef<[u8]>>(
+    message: T,
     aad: &[u8],
     public_key: &DkgPublicKey,
-) -> Result<Ciphertext> {
+) -> Result<Ciphertext<T>> {
     let mut rng = thread_rng();
     let ciphertext =
         tdec_bls12_381::encrypt(message, aad, &public_key.0, &mut rng)?;
     Ok(Ciphertext(ciphertext))
 }
 
-pub fn decrypt_with_shared_secret(
-    ciphertext: &Ciphertext,
+pub fn decrypt_with_shared_secret<T>(
+    ciphertext: &Ciphertext<T>,
     aad: &[u8],
     shared_secret: &SharedSecret,
 ) -> Result<Vec<u8>> {
@@ -73,9 +73,9 @@ pub fn decrypt_with_shared_secret(
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Eq)]
-pub struct Ciphertext(tdec_bls12_381::Ciphertext);
+pub struct Ciphertext<T = Vec<u8>>(tdec_bls12_381::Ciphertext<T>);
 
-impl Ciphertext {
+impl<T> Ciphertext<T> {
     pub fn header(&self) -> Result<CiphertextHeader> {
         Ok(CiphertextHeader(self.0.header()?))
     }
@@ -408,7 +408,6 @@ pub struct SharedSecret(pub ferveo_tdec::SharedSecret<E>);
 mod test_ferveo_api {
 
     use ark_std::{UniformRand, iterable::Iterable};
-    use ferveo_tdec::SecretBox;
     use itertools::{Itertools, izip};
     use rand::{
         SeedableRng,
@@ -510,9 +509,7 @@ mod test_ferveo_api {
         let dkg_public_key = local_aggregate.public_key();
 
         // In the meantime, the client creates a ciphertext and decryption request
-        let ciphertext =
-            encrypt(SecretBox::new(MSG.to_vec()), AAD, &dkg_public_key)
-                .unwrap();
+        let ciphertext = encrypt(MSG, AAD, &dkg_public_key).unwrap();
 
         // In precomputed variant, client selects a specific subset of validators to create
         // decryption shares
@@ -613,8 +610,7 @@ mod test_ferveo_api {
         let public_key = local_aggregate.public_key();
 
         // In the meantime, the client creates a ciphertext and decryption request
-        let ciphertext =
-            encrypt(SecretBox::new(MSG.to_vec()), AAD, &public_key).unwrap();
+        let ciphertext = encrypt(MSG, AAD, &public_key).unwrap();
 
         // Having aggregated the transcripts, the validators can now create decryption shares
         let mut decryption_shares: Vec<_> =
@@ -912,8 +908,7 @@ mod test_ferveo_api {
 
         // Create an initial shared secret for testing purposes
         let public_key = server_aggregate.public_key();
-        let ciphertext =
-            encrypt(SecretBox::new(MSG.to_vec()), AAD, &public_key).unwrap();
+        let ciphertext = encrypt(MSG, AAD, &public_key).unwrap();
         let ciphertext_header = ciphertext.header().unwrap();
         let transcripts = messages
             .iter()

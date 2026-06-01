@@ -7,7 +7,6 @@ mod context;
 mod decryption;
 mod hash_to_curve;
 mod key_share;
-mod secret_box;
 
 pub use ciphertext::{
     Ciphertext, CiphertextHeader, decrypt_symmetric,
@@ -28,7 +27,6 @@ pub use hash_to_curve::{HTP_BLS12381_G2_DST, htp_bls12381_g2};
 pub use key_share::{
     BlindedKeyShare, DkgPublicKey, PrivateKeyShare, ShareCommitment,
 };
-pub use secret_box::SecretBox;
 
 #[cfg(feature = "bls12_381")]
 pub mod bls12_381;
@@ -238,8 +236,7 @@ mod tests {
 
         let (pubkey, _, _) = setup_simple::<E>(threshold, shares_num, rng);
 
-        let ciphertext =
-            encrypt::<E>(SecretBox::new(msg), aad, &pubkey, rng).unwrap();
+        let ciphertext = encrypt::<E, _>(msg, aad, &pubkey, rng).unwrap();
 
         let serialized = ciphertext.to_bytes().unwrap();
         let deserialized: Ciphertext<E> =
@@ -248,17 +245,11 @@ mod tests {
         assert_eq!(serialized, deserialized.to_bytes().unwrap())
     }
 
-    fn test_ciphertext_validation_fails<E: Pairing>(
-        msg: &[u8],
+    fn test_ciphertext_validation_fails<E: Pairing, T: Clone>(
         aad: &[u8],
-        ciphertext: &Ciphertext<E>,
+        ciphertext: &Ciphertext<E, T>,
         shared_secret: &SharedSecret<E>,
     ) {
-        // So far, the ciphertext is valid
-        let plaintext =
-            decrypt_with_shared_secret(ciphertext, aad, shared_secret).unwrap();
-        assert_eq!(plaintext, msg);
-
         // Malformed the ciphertext
         let mut ciphertext = ciphertext.clone();
         ciphertext.ciphertext[0] += 1;
@@ -285,8 +276,7 @@ mod tests {
 
         let (pubkey, _, contexts) =
             setup_simple::<E>(shares_num, threshold, rng);
-        let ciphertext =
-            encrypt::<E>(SecretBox::new(msg), aad, &pubkey, rng).unwrap();
+        let ciphertext = encrypt::<E, _>(msg, aad, &pubkey, rng).unwrap();
 
         let bad_aad = "bad aad".as_bytes();
         assert!(
@@ -301,15 +291,14 @@ mod tests {
         let mut rng = &mut test_rng();
         let shares_num = 16;
         let threshold = shares_num * 2 / 3;
-        let msg = "my-msg".as_bytes().to_vec();
+        let msg = String::from("my-msg");
         let aad: &[u8] = "my-aad".as_bytes();
 
         let (pubkey, _, contexts) =
             setup_simple::<E>(shares_num, threshold, &mut rng);
 
         let ciphertext =
-            encrypt::<E>(SecretBox::new(msg.clone()), aad, &pubkey, rng)
-                .unwrap();
+            encrypt::<E, _>(msg.clone(), aad, &pubkey, rng).unwrap();
 
         // We need at least threshold shares to decrypt
         let decryption_shares: Vec<_> = contexts
@@ -324,12 +313,12 @@ mod tests {
         let shared_secret =
             create_shared_secret_simple(&selected_contexts, &decryption_shares);
 
-        test_ciphertext_validation_fails(
-            &msg,
-            aad,
-            &ciphertext,
-            &shared_secret,
-        );
+        let plaintext =
+            decrypt_with_shared_secret(&ciphertext, aad, &shared_secret)
+                .unwrap();
+        assert_eq!(plaintext, msg.as_bytes());
+
+        test_ciphertext_validation_fails(aad, &ciphertext, &shared_secret);
 
         // If we use less than threshold shares, we should fail
         let not_enough_dec_shares = decryption_shares[..threshold - 1].to_vec();
@@ -354,8 +343,7 @@ mod tests {
         let (pubkey, _, contexts) =
             setup_precomputed::<E>(shares_num, threshold, &mut rng);
         let ciphertext =
-            encrypt::<E>(SecretBox::new(msg.clone()), aad, &pubkey, rng)
-                .unwrap();
+            encrypt::<E, _>(msg.clone(), aad, &pubkey, rng).unwrap();
 
         let selected_participants =
             (0..threshold).choose_multiple(rng, threshold);
@@ -379,12 +367,12 @@ mod tests {
             .collect::<Vec<DecryptionSharePrecomputed<_>>>();
 
         let shared_secret = share_combine_precomputed::<E>(&decryption_shares);
-        test_ciphertext_validation_fails(
-            &msg,
-            aad,
-            &ciphertext,
-            &shared_secret,
-        );
+        let plaintext =
+            decrypt_with_shared_secret(&ciphertext, aad, &shared_secret)
+                .unwrap();
+        assert_eq!(plaintext, msg);
+
+        test_ciphertext_validation_fails(aad, &ciphertext, &shared_secret);
 
         // If we use less than threshold shares, we should fail
         let not_enough_dec_shares = decryption_shares[..threshold - 1].to_vec();
@@ -406,8 +394,7 @@ mod tests {
         let (pubkey, _, contexts) =
             setup_simple::<E>(shares_num, threshold, &mut rng);
 
-        let ciphertext =
-            encrypt::<E>(SecretBox::new(msg), aad, &pubkey, rng).unwrap();
+        let ciphertext = encrypt::<E, _>(msg, aad, &pubkey, rng).unwrap();
 
         let decryption_shares: Vec<_> = contexts
             .iter()
