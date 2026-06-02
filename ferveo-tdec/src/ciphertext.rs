@@ -392,7 +392,7 @@ fn construct_tag_hash<E: Pairing>(
 mod tests {
     use ark_std::test_rng;
 
-    use crate::{test_common::*, *};
+    use crate::*;
 
     type E = ark_bls12_381::Bls12_381;
 
@@ -404,8 +404,11 @@ mod tests {
         let msg = "my-msg".as_bytes().to_vec();
         let aad: &[u8] = "my-aad".as_bytes();
 
-        let (pubkey, privkey, _) =
-            setup_simple::<E>(threshold, shares_num, rng);
+        let DealerOutput {
+            public_key: pubkey,
+            private_key: privkey,
+            ..
+        } = deal::<E>(threshold, shares_num, rng);
 
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
@@ -426,7 +429,9 @@ mod tests {
         let threshold = shares_num * 2 / 3;
         let msg = "my-msg".as_bytes().to_vec();
         let aad: &[u8] = "my-aad".as_bytes();
-        let (pubkey, _, _) = setup_simple::<E>(threshold, shares_num, rng);
+        let DealerOutput {
+            public_key: pubkey, ..
+        } = deal::<E>(threshold, shares_num, rng);
         let mut ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
         // So far, the ciphertext is valid

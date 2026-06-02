@@ -491,9 +491,7 @@ mod tests_refresh {
     use ark_poly::EvaluationDomain;
     use ark_std::{UniformRand, Zero, test_rng};
     use ferveo_common::Keypair;
-    use ferveo_tdec::{
-        DomainPoint, lagrange_basis_at, test_common::setup_simple,
-    };
+    use ferveo_tdec::{DealerOutput, DomainPoint, deal, lagrange_basis_at};
     use itertools::{Itertools, zip_eq};
     use test_case::test_case;
 
@@ -592,11 +590,10 @@ mod tests_refresh {
         let rng = &mut test_rng();
         let security_threshold = shares_num * 2 / 3;
 
-        let (_, _, mut contexts) = setup_simple::<E>(
-            shares_num as usize,
-            security_threshold as usize,
-            rng,
-        );
+        let DealerOutput {
+            private_contexts: mut contexts,
+            ..
+        } = deal::<E>(shares_num as usize, security_threshold as usize, rng);
 
         // Prepare participants
 
@@ -676,11 +673,11 @@ mod tests_refresh {
         let rng = &mut test_rng();
         let security_threshold = shares_num * 2 / 3;
 
-        let (_, shared_private_key, mut contexts) = setup_simple::<E>(
-            shares_num as usize,
-            security_threshold as usize,
-            rng,
-        );
+        let DealerOutput {
+            private_key: shared_private_key,
+            private_contexts: mut contexts,
+            ..
+        } = deal::<E>(shares_num as usize, security_threshold as usize, rng);
 
         // Prepare participants
 
@@ -772,8 +769,11 @@ mod tests_refresh {
         security_threshold: usize,
     ) {
         let rng = &mut test_rng();
-        let (_, shared_private_key, contexts) =
-            setup_simple::<E>(shares_num, security_threshold, rng);
+        let DealerOutput {
+            private_key: shared_private_key,
+            private_contexts: contexts,
+            ..
+        } = deal::<E>(shares_num, security_threshold, rng);
 
         let fft_domain =
             ark_poly::GeneralEvaluationDomain::<ScalarField>::new(shares_num)
@@ -878,8 +878,11 @@ mod tests_refresh {
         // Test setup
         let rng = &mut test_rng();
         let security_threshold = shares_num;
-        let (_, shared_private_key, private_contexts) =
-            setup_simple::<E>(shares_num, security_threshold, rng);
+        let DealerOutput {
+            private_key: shared_private_key,
+            private_contexts,
+            ..
+        } = deal::<E>(shares_num, security_threshold, rng);
         let domain_points = &private_contexts
             .iter()
             .map(|ctxt| {
