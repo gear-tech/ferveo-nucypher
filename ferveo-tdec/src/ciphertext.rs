@@ -37,6 +37,7 @@ pub struct Ciphertext<E: Pairing, T = Raw> {
     pub ciphertext: Vec<u8>,
     /// Inner type the ciphertext bind to.
     #[serde(skip)]
+    #[codec(skip)]
     pub _type: PhantomData<T>,
 }
 
