@@ -34,7 +34,7 @@ pub use key_share::{
 pub mod bls12_381;
 
 /// Re-exports [rand::Rng] crate.
-pub mod rand {
+pub mod rand_traits {
     pub use rand::Rng;
 }
 
