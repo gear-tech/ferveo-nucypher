@@ -5,14 +5,15 @@ mod ciphertext;
 mod codec;
 mod combine;
 mod context;
-pub mod dealer;
+mod dealer;
 mod decryption;
 mod hash_to_curve;
 mod key_share;
+mod utils;
 
 pub use ciphertext::{
-    Ciphertext, CiphertextHeader, Raw, decrypt, decrypt_raw, decrypt_symmetric,
-    decrypt_symmetric_raw, encrypt, encrypt_raw,
+    Ciphertext, CiphertextHeader, Raw, RawCiphertext, decrypt, decrypt_raw,
+    decrypt_symmetric, decrypt_symmetric_raw, encrypt, encrypt_raw,
 };
 pub use codec::Codec;
 pub use combine::{
@@ -22,7 +23,7 @@ pub use combine::{
 pub use context::{
     PrivateDecryptionContextSimple, PublicDecryptionContextSimple, SetupParams,
 };
-pub use dealer::{DealerOutput, deal};
+pub use dealer::{DealerOutput, create_shared_secret_simple, deal};
 pub use decryption::{
     DecryptionSharePrecomputed, DecryptionShareSimple, ValidatorShareChecksum,
     verify_decryption_shares_simple,
@@ -70,30 +71,15 @@ pub enum Error {
 pub type DomainPoint<E> = <E as Pairing>::ScalarField;
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// Factory functions for testing
-#[cfg(any(test, feature = "test-common"))]
-pub mod test_common {
-    pub use ark_bls12_381::Bls12_381 as EllipticCurve;
-    pub use ark_ff::UniformRand;
-    pub use dealer::{create_shared_secret_simple, deal};
-
-    pub use super::*;
-}
-
 #[cfg(all(test, feature = "parity-codec"))]
 mod tests {
     use std::ops::Mul;
 
+    use crate::*;
     use ark_ec::{CurveGroup, pairing::Pairing};
     use ark_std::{UniformRand, test_rng};
     use ferveo_common::{FromBytes, ToBytes};
     use rand::seq::IteratorRandom;
-
-    use crate::{
-        DecryptionSharePrecomputed,
-        ciphertext::RawCiphertext,
-        test_common::{create_shared_secret_simple, deal, *},
-    };
 
     type E = ark_bls12_381::Bls12_381;
     type TargetField = <E as Pairing>::TargetField;

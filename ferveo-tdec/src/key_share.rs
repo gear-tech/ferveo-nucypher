@@ -2,26 +2,23 @@ use std::{collections::HashMap, ops::Mul};
 
 use ark_ec::{CurveGroup, pairing::Pairing};
 use ark_ff::Field;
-use ferveo_common::{Keypair, serialization};
+use ferveo_common::Keypair;
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::{
     CiphertextHeader, DecryptionSharePrecomputed, DecryptionShareSimple,
-    DomainPoint, Result, prepare_combine_simple,
+    DomainPoint, Result, prepare_combine_simple, utils::ark_serde,
 };
 
-#[serde_as]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DkgPublicKey<E: Pairing>(
-    #[serde_as(as = "serialization::SerdeAs")] pub E::G1Affine,
+    #[serde(with = "ark_serde")] pub E::G1Affine,
 );
 
-#[serde_as]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ShareCommitment<E: Pairing>(
-    #[serde_as(as = "serialization::SerdeAs")] pub E::G1Affine, // A_{i, \omega_i}
+    #[serde(with = "ark_serde")] pub E::G1Affine, // A_{i, \omega_i}
 );
 
 // TODO: Improve by adding share commitment here
@@ -143,10 +140,9 @@ impl<E: Pairing> BlindedKeyShare<E> {
     }
 }
 
-#[serde_as]
 #[derive(
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
 )]
 pub struct PrivateKeyShare<E: Pairing>(
-    #[serde_as(as = "serialization::SerdeAs")] pub E::G2Affine,
+    #[serde(with = "ark_serde")] pub E::G2Affine,
 );

@@ -2,20 +2,17 @@ use std::ops::Mul;
 
 use ark_ec::{CurveGroup, PrimeGroup, pairing::Pairing};
 use ark_ff::Field;
-use ferveo_common::serialization;
 use itertools::izip;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use serde_with::serde_as;
 
 use crate::{
     Ciphertext, CiphertextHeader, PrivateKeyShare,
-    PublicDecryptionContextSimple, Result,
+    PublicDecryptionContextSimple, Result, utils::ark_serde,
 };
 
-#[serde_as]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct ValidatorShareChecksum<E: Pairing> {
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub checksum: E::G1Affine,
 }
 
@@ -64,10 +61,9 @@ impl<E: Pairing> ValidatorShareChecksum<E> {
 /// A decryption share for a simple variant of the threshold decryption scheme.
 /// In this variant, the decryption share require additional computation on the
 /// client side int order to be combined.
-#[serde_as]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecryptionShareSimple<E: Pairing> {
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub decryption_share: E::TargetField,
     #[serde(bound(
         serialize = "ValidatorShareChecksum<E>: Serialize",
@@ -135,11 +131,10 @@ impl<E: Pairing> DecryptionShareSimple<E> {
 /// without additional computation on the client side.
 /// The downside is that the threshold of decryption shares required to decrypt
 /// is equal to the number of private key shares in the scheme.
-#[serde_as]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecryptionSharePrecomputed<E: Pairing> {
     pub decrypter_index: usize,
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub decryption_share: E::TargetField,
     #[serde(bound(
         serialize = "ValidatorShareChecksum<E>: Serialize",

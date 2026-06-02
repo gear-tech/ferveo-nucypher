@@ -26,7 +26,6 @@ rand = { workspace = true }
 rand_core = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_bytes = { workspace = true }
-serde_with = { workspace = true }
 sha2 = { workspace = true }
 subproductdomain = { package = "subproductdomain-nucypher", path = "../subproductdomain", version = "^0.4.0" }
 thiserror = { workspace = true }
@@ -44,7 +43,6 @@ ignored = ["serde_bytes"]
 name = "tpke"
 path = "benches/tpke.rs"
 harness = false
-required-features = ["test-common"]
 
 [[bench]]
 name = "arkworks"
@@ -55,4 +53,3 @@ harness = false
 default = ["bls12_381", "parity-codec"]
 bls12_381 = []
 parity-codec = ["dep:parity-scale-codec"]
-test-common = []

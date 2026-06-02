@@ -1083,7 +1083,6 @@ dependencies = [
  "rand_core 0.6.4",
  "serde",
  "serde_bytes",
- "serde_with",
  "sha2",
  "subproductdomain-nucypher",
  "thiserror 1.0.69",

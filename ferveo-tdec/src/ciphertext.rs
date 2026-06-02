@@ -2,30 +2,27 @@ use std::{marker::PhantomData, ops::Mul};
 
 use ark_ec::{AffineRepr, pairing::Pairing};
 use ark_ff::{One, UniformRand};
-use ark_serialize::CanonicalSerialize;
+use ark_serialize::{CanonicalSerialize, CanonicalDeserialize};
 use chacha20poly1305::{
     ChaCha20Poly1305,
     aead::{Aead, KeyInit, Payload, generic_array::GenericArray},
 };
-use ferveo_common::serialization;
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
 use sha2::{Sha256, digest::Digest};
 use zeroize::{ZeroizeOnDrop, Zeroizing};
 
 use crate::{
     Codec, DkgPublicKey, Error, PrivateKeyShare, Result, SharedSecret,
-    htp_bls12381_g2,
+    htp_bls12381_g2, utils::ark_serde,
 };
 
-#[serde_as]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Ciphertext<E: Pairing, T = Raw> {
     // U
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub commitment: E::G1Affine,
     // W
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub auth_tag: E::G2Affine,
     /// The ciphertext itself.
     /// Created using [chacha20poly1305::ChaCha20Poly1305::encrypt].
@@ -75,7 +72,6 @@ impl<E: Pairing, T> parity_scale_codec::Decode for Ciphertext<E, T> {
     fn decode<I: parity_scale_codec::Input>(
         input: &mut I,
     ) -> core::result::Result<Self, parity_scale_codec::Error> {
-        use ark_serialize::CanonicalDeserialize;
 
         let commitment_bytes =
             <Vec<u8> as parity_scale_codec::Decode>::decode(input)?;
@@ -140,12 +136,11 @@ impl<E: Pairing, T> Ciphertext<E, T> {
     }
 }
 
-#[serde_as]
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CiphertextHeader<E: Pairing> {
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub commitment: E::G1Affine,
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub auth_tag: E::G2Affine,
     pub ciphertext_hash: [u8; 32],
 }

@@ -2,18 +2,17 @@
 
 use ark_ec::pairing::Pairing;
 use ark_ff::{Field, One, PrimeField, Zero};
-use ferveo_common::serialization;
 use itertools::izip;
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-#[serde_as]
+use crate::utils::ark_serde;
+
 #[derive(
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
 )]
 pub struct SharedSecret<E: Pairing>(
-    #[serde_as(as = "serialization::SerdeAs")] pub(crate) E::TargetField,
+    #[serde(with = "ark_serde")] pub(crate) E::TargetField,
 );
 
 use crate::{DecryptionSharePrecomputed, DecryptionShareSimple};
