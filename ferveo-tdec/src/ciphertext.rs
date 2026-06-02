@@ -37,17 +37,32 @@ pub struct Ciphertext<E: Pairing, T = Raw> {
 }
 
 #[cfg(feature = "parity-codec")]
+#[inline]
+fn serialize_point<P: CanonicalSerialize>(point: &P) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(point.compressed_size());
+    point
+        .serialize_compressed(&mut bytes)
+        .expect("serializing to Vec should not fail");
+    bytes
+}
+
+#[cfg(feature = "parity-codec")]
+#[inline]
+fn serialize_g1<E: Pairing>(point: &E::G1Affine) -> Vec<u8> {
+    serialize_point(point)
+}
+
+#[cfg(feature = "parity-codec")]
+#[inline]
+fn serialize_g2<E: Pairing>(point: &E::G2Affine) -> Vec<u8> {
+    serialize_point(point)
+}
+
+#[cfg(feature = "parity-codec")]
 impl<E: Pairing, T> parity_scale_codec::Encode for Ciphertext<E, T> {
     fn encode_to<O: parity_scale_codec::Output + ?Sized>(&self, dest: &mut O) {
-        let mut commitment = Vec::new();
-        self.commitment
-            .serialize_compressed(&mut commitment)
-            .expect("TODO fixme");
-
-        let mut auth_tag = Vec::new();
-        self.auth_tag
-            .serialize_compressed(&mut auth_tag)
-            .expect("TODO fixme");
+        let commitment = serialize_g1::<E>(&self.commitment);
+        let auth_tag = serialize_g2::<E>(&self.auth_tag);
 
         commitment.encode_to(dest);
         auth_tag.encode_to(dest);
