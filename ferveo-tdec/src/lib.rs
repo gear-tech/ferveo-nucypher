@@ -33,6 +33,11 @@ pub use key_share::{
 #[cfg(feature = "bls12_381")]
 pub mod bls12_381;
 
+/// Re-exports [rand::Rng] crate.
+pub mod rand {
+    pub use rand::Rng;
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// Ciphertext verification failed
