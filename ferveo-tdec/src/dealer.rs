@@ -1,5 +1,3 @@
-use std::ops::Mul;
-
 use ark_ec::{AffineRepr, CurveGroup, pairing::Pairing};
 use ark_ff::{Field, UniformRand, Zero};
 use ark_poly::{
@@ -7,6 +5,7 @@ use ark_poly::{
     univariate::DensePolynomial,
 };
 use itertools::izip;
+use std::ops::Mul;
 use subproductdomain::fast_multiexp;
 
 use crate::{
@@ -34,6 +33,10 @@ pub fn deal<E: Pairing>(
     rng: &mut impl rand::Rng,
 ) -> DealerOutput<E> {
     assert!(threshold > 0, "threshold must be greater than zero");
+    assert!(
+        shares_num >= threshold,
+        "number of shares can not be less than threshold"
+    );
 
     let g = E::G1Affine::generator();
     let h = E::G2Affine::generator();
@@ -64,7 +67,7 @@ pub fn deal<E: Pairing>(
     let a_0 = threshold_poly.coeffs[0];
 
     // F_0, group's public key.
-    let group_pubkey = g.mul(a_0);
+    let group_pubkey = g * a_0;
 
     // Group's private key. This is NEVER constructed in production DKG, but
     // callers can use it for non-threshold checks and tests.

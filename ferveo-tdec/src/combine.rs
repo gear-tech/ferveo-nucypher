@@ -22,11 +22,11 @@ pub fn prepare_combine_simple<E: Pairing>(
 ) -> Vec<E::ScalarField> {
     // In this formula x_i = 0, hence numerator is x_m
     // See https://en.wikipedia.org/wiki/Lagrange_polynomial#Optimal_algorithm
-    lagrange_basis_at::<E>(domain, &E::ScalarField::zero())
+    lagrange_coefficients_at::<E>(domain, &E::ScalarField::zero())
 }
 
 /// Calculate lagrange coefficients using optimized formula
-pub fn lagrange_basis_at<E: Pairing>(
+pub fn lagrange_coefficients_at<E: Pairing>(
     shares_x: &[E::ScalarField],
     x_i: &E::ScalarField,
 ) -> Vec<<E>::ScalarField> {

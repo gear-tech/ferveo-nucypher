@@ -17,7 +17,7 @@ pub use ciphertext::{
 };
 pub use codec::Codec;
 pub use combine::{
-    SharedSecret, lagrange_basis_at, prepare_combine_simple,
+    SharedSecret, lagrange_coefficients_at, prepare_combine_simple,
     share_combine_precomputed, share_combine_simple,
 };
 pub use context::{
@@ -95,7 +95,7 @@ mod tests {
 
         let DealerOutput {
             public_key: pubkey, ..
-        } = deal::<E>(threshold, shares_num, rng);
+        } = deal::<E>(shares_num, threshold, rng);
 
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 

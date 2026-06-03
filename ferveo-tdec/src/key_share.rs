@@ -30,34 +30,6 @@ pub struct BlindedKeyShare<E: Pairing> {
 }
 
 impl<E: Pairing> BlindedKeyShare<E> {
-    // TODO: Salvage and cleanup - #197
-    // pub fn verify_blinding<R: RngCore>(
-    //     &self,
-    //     public_key: &PublicKey<E>,
-    //     rng: &mut R,
-    // ) -> bool {
-    //     let g = E::G1Affine::generator();
-    //     let alpha = E::ScalarField::rand(rng);
-
-    //     let alpha_a =
-    //         E::G1Prepared::from(g + public_key.0.mul(alpha).into_affine());
-
-    //     // \sum_i(Y_i)
-    //     let alpha_z = E::G2Prepared::from(
-    //         self.blinding_key + self.blinded_key_share.mul(alpha).into_affine(),
-    //     );
-
-    //     // e(g, Yi) == e(Ai, [b] H)
-    //     let g_inv = E::G1Prepared::from(-g.into_group());
-    //     E::multi_pairing([g_inv, alpha_a], [alpha_z, self.blinding_key.into()])
-    //         .0
-    //         == E::TargetField::one()
-    // }
-
-    // pub fn multiply_by_omega_inv(&mut self, omega_inv: &E::ScalarField) {
-    //     self.blinded_key_share =
-    //         self.blinded_key_share.mul(-*omega_inv).into_affine();
-    // }
     pub fn unblind(
         &self,
         validator_keypair: &Keypair<E>,

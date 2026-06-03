@@ -11,8 +11,7 @@ use sha2::Sha256;
 pub const HTP_BLS12381_G2_DST: &[u8] =
     b"QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_RO_";
 
-/// Hash to BLS12-381 G2 per RFC9380 with DST
-/// `QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_RO_`.
+/// Hash to BLS12-381 G2 per RFC9380 with [HTP_BLS12381_G2_DST].
 /// Uses ark-ec native SSWU map + Wahby–Boneh isogeny.
 pub fn htp_bls12381_g2(msg: &[u8]) -> ark_bls12_381::G2Affine {
     let hasher = MapToCurveBasedHasher::<
