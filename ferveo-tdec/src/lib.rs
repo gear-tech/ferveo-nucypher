@@ -75,11 +75,12 @@ pub type Result<T> = std::result::Result<T, Error>;
 mod tests {
     use std::ops::Mul;
 
-    use crate::*;
     use ark_ec::{CurveGroup, pairing::Pairing};
     use ark_std::{UniformRand, test_rng};
     use ferveo_common::{FromBytes, ToBytes};
     use rand::seq::IteratorRandom;
+
+    use crate::*;
 
     type E = ark_bls12_381::Bls12_381;
     type TargetField = <E as Pairing>::TargetField;

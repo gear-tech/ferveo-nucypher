@@ -1,3 +1,5 @@
+use std::ops::Mul;
+
 use ark_ec::{AffineRepr, CurveGroup, pairing::Pairing};
 use ark_ff::{UniformRand, Zero};
 use ark_poly::{
@@ -5,7 +7,6 @@ use ark_poly::{
     univariate::DensePolynomial,
 };
 use itertools::izip;
-use std::ops::Mul;
 use subproductdomain::fast_multiexp;
 
 use crate::{

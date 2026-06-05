@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use ark_ec::{AffineRepr, CurveGroup, pairing::Pairing};
 use ark_ff::{One, UniformRand};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
@@ -7,7 +9,6 @@ use chacha20poly1305::{
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, digest::Digest};
-use std::marker::PhantomData;
 use zeroize::{ZeroizeOnDrop, Zeroizing};
 
 use crate::{
@@ -377,8 +378,9 @@ fn construct_tag_hash<E: Pairing>(
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
     use ark_std::test_rng;
+
+    use crate::*;
     type E = ark_bls12_381::Bls12_381;
 
     #[test]
