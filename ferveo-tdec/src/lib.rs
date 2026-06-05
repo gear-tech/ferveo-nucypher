@@ -21,7 +21,7 @@ pub use combine::{
     share_combine_precomputed, share_combine_simple,
 };
 pub use context::{
-    PrivateDecryptionContextSimple, PublicDecryptionContextSimple, SetupParams,
+    PrivateDecryptionContextSimple, PublicDecryptionContextSimple,
 };
 pub use dealer::{DealerOutput, create_shared_secret_simple, deal};
 pub use decryption::{

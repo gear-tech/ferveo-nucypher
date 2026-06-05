@@ -1,5 +1,5 @@
 use ark_ec::{AffineRepr, CurveGroup, pairing::Pairing};
-use ark_ff::{Field, UniformRand, Zero};
+use ark_ff::{UniformRand, Zero};
 use ark_poly::{
     DenseUVPolynomial, EvaluationDomain, Polynomial,
     univariate::DensePolynomial,
@@ -11,7 +11,7 @@ use subproductdomain::fast_multiexp;
 use crate::{
     BlindedKeyShare, DecryptionShareSimple, DkgPublicKey,
     PrivateDecryptionContextSimple, PrivateKeyShare,
-    PublicDecryptionContextSimple, SetupParams, ShareCommitment, SharedSecret,
+    PublicDecryptionContextSimple, ShareCommitment, SharedSecret,
     prepare_combine_simple, share_combine_simple,
 };
 
@@ -101,14 +101,7 @@ pub fn deal<E: Pairing>(
 
         private_contexts.push(PrivateDecryptionContextSimple::<E> {
             index,
-            setup_params: SetupParams {
-                b: blinding_factor,
-                b_inv: blinding_factor.inverse().unwrap(),
-                g,
-                h_inv: E::G2Prepared::from(-h.into_group()),
-                g_inv: E::G1Prepared::from(-g.into_group()),
-                h,
-            },
+            validator_decryption_key: blinding_factor,
             private_key_share,
             public_decryption_contexts: vec![],
         });

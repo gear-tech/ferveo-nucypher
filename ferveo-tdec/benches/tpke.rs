@@ -109,7 +109,7 @@ pub fn bench_create_decryption_share(c: &mut Criterion) {
                         .map(|ctx| {
                             // Using create_unchecked here to avoid the cost of verifying the ciphertext
                             DecryptionShareSimple::create_unchecked(
-                                &ctx.setup_params.b,
+                                &ctx.validator_decryption_key,
                                 &ctx.private_key_share,
                                 &setup.shared.ciphertext.header().unwrap(),
                             )
@@ -412,7 +412,7 @@ pub fn bench_decryption_share_validity_checks(c: &mut Criterion) {
 //             |b| {
 //                 b.iter(|| {
 //                     black_box(refresh_private_key_share::<E>(
-//                         &p.setup_params.h.into_group(),
+//                         &ark_bls12_381::G2Affine::generator().into_group(),
 //                         &p.public_decryption_contexts[0].domain,
 //                         &polynomial,
 //                         &p.private_key_share,

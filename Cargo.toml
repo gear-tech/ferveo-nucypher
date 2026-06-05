@@ -10,6 +10,9 @@ members = [
 ]
 
 [workspace.dependencies]
+# workspace packages
+subproductdomain = { path = "subproductdomain", package = "subproductdomain-nucypher"}
+
 anyhow = "1.0.47"
 ark-bls12-381 = "0.6"
 ark-ec = "0.6"
@@ -23,8 +26,6 @@ chacha20poly1305 = "0.10.1"
 criterion = "0.3"
 derive_more = { version = "0.99", default-features = false }
 digest = "0.10.0"
-ferveo-common = { path = "ferveo-common" }
-ferveo-tdec = { path = "ferveo-tdec" }
 generic-array = "0.14.7"
 hex = "0.4"
 itertools = "0.10.5"
@@ -37,7 +38,6 @@ serde = "1.0"
 serde_bytes = "0.11.9"
 serde_with = "2.2.0"
 sha2 = "0.10.6"
-subproductdomain = { path = "subproductdomain" }
 test-case = "3.3.1"
 thiserror = "1.0"
 zeroize = "1.6.0"

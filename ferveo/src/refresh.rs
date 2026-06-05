@@ -791,7 +791,7 @@ mod tests_refresh {
                         );
 
                 let validator_keypair = ferveo_common::Keypair {
-                    decryption_key: p.setup_params.b,
+                    decryption_key: p.validator_decryption_key,
                 };
                 let updated_private_share = updated_blinded_key_share
                     .0
@@ -881,7 +881,7 @@ mod tests_refresh {
         // and that the new blinded share contains the same private key share.
         // TODO: This is a low-level check for now. This will be part of the handover protocol.
         let departing_validator_private_key =
-            departing_participant.setup_params.b;
+            departing_participant.validator_decryption_key;
         let departing_validator_keypair = Keypair::<E> {
             decryption_key: departing_validator_private_key,
         };
@@ -913,7 +913,7 @@ mod tests_refresh {
                 let blinded_key_share =
                     p.public_decryption_contexts[p.index].blinded_key_share;
                 let validator_keypair = ferveo_common::Keypair {
-                    decryption_key: p.setup_params.b,
+                    decryption_key: p.validator_decryption_key,
                 };
 
                 let private_share =
