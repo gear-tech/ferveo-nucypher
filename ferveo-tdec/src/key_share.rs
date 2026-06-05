@@ -2,26 +2,23 @@ use std::{collections::HashMap, ops::Mul};
 
 use ark_ec::{CurveGroup, pairing::Pairing};
 use ark_ff::Field;
-use ferveo_common::{Keypair, serialization};
+use ferveo_common::Keypair;
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::{
     CiphertextHeader, DecryptionSharePrecomputed, DecryptionShareSimple,
-    DomainPoint, Result, prepare_combine_simple,
+    DomainPoint, Result, prepare_combine_simple, utils::ark_serde,
 };
 
-#[serde_as]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DkgPublicKey<E: Pairing>(
-    #[serde_as(as = "serialization::SerdeAs")] pub E::G1Affine,
+    #[serde(with = "ark_serde")] pub E::G1Affine,
 );
 
-#[serde_as]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ShareCommitment<E: Pairing>(
-    #[serde_as(as = "serialization::SerdeAs")] pub E::G1Affine, // A_{i, \omega_i}
+    #[serde(with = "ark_serde")] pub E::G1Affine, // A_{i, \omega_i}
 );
 
 // TODO: Improve by adding share commitment here
@@ -33,34 +30,6 @@ pub struct BlindedKeyShare<E: Pairing> {
 }
 
 impl<E: Pairing> BlindedKeyShare<E> {
-    // TODO: Salvage and cleanup - #197
-    // pub fn verify_blinding<R: RngCore>(
-    //     &self,
-    //     public_key: &PublicKey<E>,
-    //     rng: &mut R,
-    // ) -> bool {
-    //     let g = E::G1Affine::generator();
-    //     let alpha = E::ScalarField::rand(rng);
-
-    //     let alpha_a =
-    //         E::G1Prepared::from(g + public_key.0.mul(alpha).into_affine());
-
-    //     // \sum_i(Y_i)
-    //     let alpha_z = E::G2Prepared::from(
-    //         self.blinding_key + self.blinded_key_share.mul(alpha).into_affine(),
-    //     );
-
-    //     // e(g, Yi) == e(Ai, [b] H)
-    //     let g_inv = E::G1Prepared::from(-g.into_group());
-    //     E::multi_pairing([g_inv, alpha_a], [alpha_z, self.blinding_key.into()])
-    //         .0
-    //         == E::TargetField::one()
-    // }
-
-    // pub fn multiply_by_omega_inv(&mut self, omega_inv: &E::ScalarField) {
-    //     self.blinded_key_share =
-    //         self.blinded_key_share.mul(-*omega_inv).into_affine();
-    // }
     pub fn unblind(
         &self,
         validator_keypair: &Keypair<E>,
@@ -143,10 +112,9 @@ impl<E: Pairing> BlindedKeyShare<E> {
     }
 }
 
-#[serde_as]
 #[derive(
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
 )]
 pub struct PrivateKeyShare<E: Pairing>(
-    #[serde_as(as = "serialization::SerdeAs")] pub E::G2Affine,
+    #[serde(with = "ark_serde")] pub E::G2Affine,
 );

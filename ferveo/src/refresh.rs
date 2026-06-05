@@ -485,14 +485,14 @@ fn make_random_polynomial_with_root<E: Pairing>(
 
 #[cfg(test)]
 mod tests_refresh {
-    use std::{collections::HashMap, ops::Mul};
+    use std::collections::HashMap;
 
     use ark_ec::CurveGroup;
     use ark_poly::EvaluationDomain;
     use ark_std::{UniformRand, Zero, test_rng};
     use ferveo_common::Keypair;
     use ferveo_tdec::{
-        DomainPoint, lagrange_basis_at, test_common::setup_simple,
+        DealerOutput, DomainPoint, deal, lagrange_coefficients_at,
     };
     use itertools::{Itertools, zip_eq};
     use test_case::test_case;
@@ -506,58 +506,6 @@ mod tests_refresh {
         <ark_bls12_381::Bls12_381 as ark_ec::pairing::Pairing>::ScalarField;
     type G2 = <ark_bls12_381::Bls12_381 as ark_ec::pairing::Pairing>::G2;
 
-    // TODO: Part of recovery tests - #193
-    // /// Using tdec test utilities here instead of PVSS to test the internals of the shared key recovery
-    // fn create_updated_private_key_shares<R: RngCore>(
-    //     rng: &mut R,
-    //     threshold: u32,
-    //     x_r: &Fr,
-    //     remaining_participants: &[PrivateDecryptionContextSimple<E>],
-    // ) -> HashMap<u32, UpdatedPrivateKeyShare<E>> {
-    //     // Each participant prepares an update for each other participant
-    //     let domain_points_and_keys = remaining_participants
-    //         .iter()
-    //         .map(|c| {
-    //             let ctxt = &c.public_decryption_contexts[c.index];
-    //             (c.index as u32, (ctxt.domain, ctxt.validator_public_key))
-    //         })
-    //         .collect::<HashMap<_, _>>();
-    //     let share_updates = remaining_participants
-    //         .iter()
-    //         .map(|p| {
-    //             let share_updates = UpdateTranscript::create_recovery_updates(
-    //                 &domain_points_and_keys,
-    //                 x_r,
-    //                 threshold,
-    //                 rng,
-    //             );
-    //             (p.index as u32, share_updates.updates)
-    //         })
-    //         .collect::<HashMap<u32, _>>();
-
-    //     // Participants share updates and update their shares
-    //     let updated_private_key_shares = remaining_participants
-    //         .iter()
-    //         .map(|p| {
-    //             // Current participant receives updates from other participants
-    //             let updates_for_participant: Vec<_> = share_updates
-    //                 .values()
-    //                 .map(|updates| {
-    //                     updates.get(&(p.index as u32)).cloned().unwrap()
-    //                 })
-    //                 .collect();
-
-    //             // And updates their share
-    //             let updated_share =
-    //                 PrivateKeyShare(p.private_key_share.clone())
-    //                     .create_updated_key_share(&updates_for_participant);
-    //             (p.index as u32, updated_share)
-    //         })
-    //         .collect::<HashMap<u32, _>>();
-
-    //     updated_private_key_shares
-    // }
-
     /// `x_r` is the point at which the share is to be recovered
     fn combine_private_shares_at(
         x_r: &DomainPoint<E>,
@@ -565,16 +513,15 @@ mod tests_refresh {
         shares: &HashMap<u32, ferveo_tdec::PrivateKeyShare<E>>,
     ) -> ferveo_tdec::PrivateKeyShare<E> {
         let mut domain_points_ = vec![];
-        let mut updated_shares_ = vec![];
+        let mut updated_shares = vec![];
         for share_index in shares.keys().sorted() {
             domain_points_.push(*domain_points.get(share_index).unwrap());
-            updated_shares_.push(shares.get(share_index).unwrap().0);
+            updated_shares.push(shares.get(share_index).unwrap().0);
         }
 
         // Interpolate new shares to recover y_r
-        let lagrange = lagrange_basis_at::<E>(&domain_points_, x_r);
-        let prods =
-            zip_eq(updated_shares_, lagrange).map(|(y_j, l)| y_j.mul(l));
+        let lagrange = lagrange_coefficients_at::<E>(&domain_points_, x_r);
+        let prods = zip_eq(updated_shares, lagrange).map(|(y_j, l)| y_j * l);
         let y_r = prods.fold(G2::zero(), |acc, y_j| acc + y_j);
         ferveo_tdec::PrivateKeyShare(y_r.into_affine())
     }
@@ -592,11 +539,10 @@ mod tests_refresh {
         let rng = &mut test_rng();
         let security_threshold = shares_num * 2 / 3;
 
-        let (_, _, mut contexts) = setup_simple::<E>(
-            shares_num as usize,
-            security_threshold as usize,
-            rng,
-        );
+        let DealerOutput {
+            private_contexts: mut contexts,
+            ..
+        } = deal::<E>(shares_num as usize, security_threshold as usize, rng);
 
         // Prepare participants
 
@@ -676,11 +622,11 @@ mod tests_refresh {
         let rng = &mut test_rng();
         let security_threshold = shares_num * 2 / 3;
 
-        let (_, shared_private_key, mut contexts) = setup_simple::<E>(
-            shares_num as usize,
-            security_threshold as usize,
-            rng,
-        );
+        let DealerOutput {
+            private_key: shared_private_key,
+            private_contexts: mut contexts,
+            ..
+        } = deal::<E>(shares_num as usize, security_threshold as usize, rng);
 
         // Prepare participants
 
@@ -772,8 +718,11 @@ mod tests_refresh {
         security_threshold: usize,
     ) {
         let rng = &mut test_rng();
-        let (_, shared_private_key, contexts) =
-            setup_simple::<E>(shares_num, security_threshold, rng);
+        let DealerOutput {
+            private_key: shared_private_key,
+            private_contexts: contexts,
+            ..
+        } = deal::<E>(shares_num, security_threshold, rng);
 
         let fft_domain =
             ark_poly::GeneralEvaluationDomain::<ScalarField>::new(shares_num)
@@ -842,7 +791,7 @@ mod tests_refresh {
                         );
 
                 let validator_keypair = ferveo_common::Keypair {
-                    decryption_key: p.setup_params.b,
+                    decryption_key: p.validator_decryption_key,
                 };
                 let updated_private_share = updated_blinded_key_share
                     .0
@@ -878,8 +827,11 @@ mod tests_refresh {
         // Test setup
         let rng = &mut test_rng();
         let security_threshold = shares_num;
-        let (_, shared_private_key, private_contexts) =
-            setup_simple::<E>(shares_num, security_threshold, rng);
+        let DealerOutput {
+            private_key: shared_private_key,
+            private_contexts,
+            ..
+        } = deal::<E>(shares_num, security_threshold, rng);
         let domain_points = &private_contexts
             .iter()
             .map(|ctxt| {
@@ -929,7 +881,7 @@ mod tests_refresh {
         // and that the new blinded share contains the same private key share.
         // TODO: This is a low-level check for now. This will be part of the handover protocol.
         let departing_validator_private_key =
-            departing_participant.setup_params.b;
+            departing_participant.validator_decryption_key;
         let departing_validator_keypair = Keypair::<E> {
             decryption_key: departing_validator_private_key,
         };
@@ -961,7 +913,7 @@ mod tests_refresh {
                 let blinded_key_share =
                     p.public_decryption_contexts[p.index].blinded_key_share;
                 let validator_keypair = ferveo_common::Keypair {
-                    decryption_key: p.setup_params.b,
+                    decryption_key: p.validator_decryption_key,
                 };
 
                 let private_share =

@@ -1,31 +1,28 @@
-use std::{marker::PhantomData, ops::Mul};
+use std::marker::PhantomData;
 
-use ark_ec::{AffineRepr, pairing::Pairing};
+use ark_ec::{AffineRepr, CurveGroup, pairing::Pairing};
 use ark_ff::{One, UniformRand};
-use ark_serialize::CanonicalSerialize;
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use chacha20poly1305::{
     ChaCha20Poly1305,
     aead::{Aead, KeyInit, Payload, generic_array::GenericArray},
 };
-use ferveo_common::serialization;
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
 use sha2::{Sha256, digest::Digest};
 use zeroize::{ZeroizeOnDrop, Zeroizing};
 
 use crate::{
     Codec, DkgPublicKey, Error, PrivateKeyShare, Result, SharedSecret,
-    htp_bls12381_g2,
+    htp_bls12381_g2, utils::ark_serde,
 };
 
-#[serde_as]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Ciphertext<E: Pairing, T = Raw> {
     // U
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub commitment: E::G1Affine,
     // W
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub auth_tag: E::G2Affine,
     /// The ciphertext itself.
     /// Created using [chacha20poly1305::ChaCha20Poly1305::encrypt].
@@ -34,6 +31,79 @@ pub struct Ciphertext<E: Pairing, T = Raw> {
     /// Inner type the ciphertext bind to.
     #[serde(skip)]
     pub _type: PhantomData<T>,
+}
+
+#[inline]
+fn serialize_point<P: CanonicalSerialize>(point: &P) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(point.compressed_size());
+    point
+        .serialize_compressed(&mut bytes)
+        .expect("serializing to Vec should not fail");
+    bytes
+}
+
+#[inline]
+fn serialize_g1<E: Pairing>(point: &E::G1Affine) -> Vec<u8> {
+    serialize_point(point)
+}
+
+#[inline]
+fn serialize_g2<E: Pairing>(point: &E::G2Affine) -> Vec<u8> {
+    serialize_point(point)
+}
+
+#[cfg(feature = "parity-codec")]
+impl<E: Pairing, T> parity_scale_codec::Encode for Ciphertext<E, T> {
+    fn encode_to<O: parity_scale_codec::Output + ?Sized>(&self, dest: &mut O) {
+        let commitment = serialize_g1::<E>(&self.commitment);
+        let auth_tag = serialize_g2::<E>(&self.auth_tag);
+
+        commitment.encode_to(dest);
+        auth_tag.encode_to(dest);
+        self.ciphertext.encode_to(dest);
+    }
+}
+
+#[cfg(feature = "parity-codec")]
+impl<E: Pairing, T> parity_scale_codec::Decode for Ciphertext<E, T> {
+    fn decode<I: parity_scale_codec::Input>(
+        input: &mut I,
+    ) -> core::result::Result<Self, parity_scale_codec::Error> {
+        let commitment_bytes =
+            <Vec<u8> as parity_scale_codec::Decode>::decode(input)?;
+
+        let commitment =
+            <E::G1Affine as CanonicalDeserialize>::deserialize_compressed(
+                commitment_bytes.as_slice(),
+            )
+            .map_err(|_| {
+                parity_scale_codec::Error::from(
+                    "failed to deserialize E::G1Affine",
+                )
+            })?;
+
+        let auth_tag_bytes =
+            <Vec<u8> as parity_scale_codec::Decode>::decode(input)?;
+
+        let auth_tag =
+            <E::G2Affine as CanonicalDeserialize>::deserialize_compressed(
+                auth_tag_bytes.as_slice(),
+            )
+            .map_err(|_| {
+                parity_scale_codec::Error::from(
+                    "failed to deserialize E::G2Affine",
+                )
+            })?;
+
+        let ciphertext =
+            <Vec<u8> as parity_scale_codec::Decode>::decode(input)?;
+        Ok(Self {
+            commitment,
+            auth_tag,
+            ciphertext,
+            _type: PhantomData,
+        })
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -62,12 +132,11 @@ impl<E: Pairing, T> Ciphertext<E, T> {
     }
 }
 
-#[serde_as]
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CiphertextHeader<E: Pairing> {
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub commitment: E::G1Affine,
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub auth_tag: E::G2Affine,
     pub ciphertext_hash: [u8; 32],
 }
@@ -137,18 +206,18 @@ fn encrypt_raw_bytes<E: Pairing, T>(
     pubkey: &DkgPublicKey<E>,
     rng: &mut impl rand::Rng,
 ) -> Result<Ciphertext<E, T>> {
-    // r
-    let rand_element = E::ScalarField::rand(rng);
-    // g
-    let g_gen = E::G1Affine::generator();
+    // r - random element to encrypt message with
+    let r = E::ScalarField::rand(rng);
+    // G1 group generator
+    let g1 = E::G1Affine::generator();
     // h
     let h_gen = E::G2Affine::generator();
 
-    let ry_prep = E::G1Prepared::from(pubkey.0.mul(rand_element).into());
+    let ry_prep = E::G1Prepared::from((pubkey.0 * r).into_affine());
     // s
     let product = E::pairing(ry_prep, h_gen).0;
-    // u
-    let commitment = g_gen.mul(rand_element).into();
+    // U - public R value
+    let commitment = (g1 * r).into_affine();
 
     let nonce = Nonce::from_commitment::<E>(commitment)?;
     let shared_secret = SharedSecret::<E>(product);
@@ -161,9 +230,9 @@ fn encrypt_raw_bytes<E: Pairing, T>(
     let ciphertext_hash = sha256(&ciphertext);
 
     // w
-    let auth_tag = construct_tag_hash::<E>(commitment, &ciphertext_hash, aad)?
-        .mul(rand_element)
-        .into();
+    let auth_tag =
+        (construct_tag_hash::<E>(commitment, &ciphertext_hash, aad)? * r)
+            .into_affine();
 
     // TODO: Consider adding aad to the Ciphertext struct
     Ok(Ciphertext::<E, T> {
@@ -280,18 +349,15 @@ impl Nonce {
     pub fn from_commitment<E: Pairing>(
         commitment: E::G1Affine,
     ) -> Result<Self> {
-        let mut commitment_bytes = Vec::new();
-        commitment.serialize_compressed(&mut commitment_bytes)?;
+        let commitment_bytes = serialize_g1::<E>(&commitment);
         let commitment_hash = sha256(&commitment_bytes);
-        Ok(Nonce(*chacha20poly1305::Nonce::from_slice(
+        Ok(Self(*chacha20poly1305::Nonce::from_slice(
             &commitment_hash[..12],
         )))
     }
 }
 
-fn hash_to_g2<T: ark_serialize::CanonicalDeserialize>(
-    message: &[u8],
-) -> Result<T> {
+fn hash_to_g2<T: CanonicalDeserialize>(message: &[u8]) -> Result<T> {
     let point = htp_bls12381_g2(message);
     let mut point_ser: Vec<u8> = Vec::new();
     point.serialize_compressed(&mut point_ser)?;
@@ -314,8 +380,7 @@ fn construct_tag_hash<E: Pairing>(
 mod tests {
     use ark_std::test_rng;
 
-    use crate::{test_common::*, *};
-
+    use crate::*;
     type E = ark_bls12_381::Bls12_381;
 
     #[test]
@@ -326,8 +391,11 @@ mod tests {
         let msg = "my-msg".as_bytes().to_vec();
         let aad: &[u8] = "my-aad".as_bytes();
 
-        let (pubkey, privkey, _) =
-            setup_simple::<E>(threshold, shares_num, rng);
+        let DealerOutput {
+            public_key: pubkey,
+            private_key: privkey,
+            ..
+        } = deal::<E>(shares_num, threshold, rng);
 
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
@@ -348,7 +416,9 @@ mod tests {
         let threshold = shares_num * 2 / 3;
         let msg = "my-msg".as_bytes().to_vec();
         let aad: &[u8] = "my-aad".as_bytes();
-        let (pubkey, _, _) = setup_simple::<E>(threshold, shares_num, rng);
+        let DealerOutput {
+            public_key: pubkey, ..
+        } = deal::<E>(shares_num, threshold, rng);
         let mut ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
         // So far, the ciphertext is valid

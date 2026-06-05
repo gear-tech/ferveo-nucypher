@@ -5,22 +5,25 @@ mod ciphertext;
 mod codec;
 mod combine;
 mod context;
+mod dealer;
 mod decryption;
 mod hash_to_curve;
 mod key_share;
+mod utils;
 
 pub use ciphertext::{
-    Ciphertext, CiphertextHeader, Raw, decrypt, decrypt_raw, decrypt_symmetric,
-    decrypt_symmetric_raw, encrypt, encrypt_raw,
+    Ciphertext, CiphertextHeader, Raw, RawCiphertext, decrypt, decrypt_raw,
+    decrypt_symmetric, decrypt_symmetric_raw, encrypt, encrypt_raw,
 };
 pub use codec::Codec;
 pub use combine::{
-    SharedSecret, lagrange_basis_at, prepare_combine_simple,
+    SharedSecret, lagrange_coefficients_at, prepare_combine_simple,
     share_combine_precomputed, share_combine_simple,
 };
 pub use context::{
-    PrivateDecryptionContextSimple, PublicDecryptionContextSimple, SetupParams,
+    PrivateDecryptionContextSimple, PublicDecryptionContextSimple,
 };
+pub use dealer::{DealerOutput, create_shared_secret_simple, deal};
 pub use decryption::{
     DecryptionSharePrecomputed, DecryptionShareSimple, ValidatorShareChecksum,
     verify_decryption_shares_simple,
@@ -32,6 +35,11 @@ pub use key_share::{
 
 #[cfg(feature = "bls12_381")]
 pub mod bls12_381;
+
+/// Re-exports [rand::Rng] crate.
+pub mod rand_traits {
+    pub use rand::Rng;
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -63,153 +71,6 @@ pub enum Error {
 pub type DomainPoint<E> = <E as Pairing>::ScalarField;
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// Factory functions for testing
-#[cfg(any(test, feature = "test-common"))]
-pub mod test_common {
-    use std::ops::Mul;
-
-    pub use ark_bls12_381::Bls12_381 as EllipticCurve;
-    use ark_ec::{AffineRepr, CurveGroup, pairing::Pairing};
-    pub use ark_ff::UniformRand;
-    use ark_ff::{Field, Zero};
-    use ark_poly::{
-        DenseUVPolynomial, EvaluationDomain, Polynomial,
-        univariate::DensePolynomial,
-    };
-    use itertools::izip;
-    use subproductdomain::fast_multiexp;
-
-    pub use super::*;
-
-    pub fn setup_simple<E: Pairing>(
-        shares_num: usize,
-        threshold: usize,
-        rng: &mut impl rand::Rng,
-    ) -> (
-        DkgPublicKey<E>,
-        PrivateKeyShare<E>,
-        Vec<PrivateDecryptionContextSimple<E>>,
-    ) {
-        let g = E::G1Affine::generator();
-        let h = E::G2Affine::generator();
-
-        // The dealer chooses a uniformly random polynomial f of degree t-1
-        let threshold_poly =
-            DensePolynomial::<E::ScalarField>::rand(threshold - 1, rng);
-
-        // Domain, or omega Ω
-        let fft_domain =
-            ark_poly::GeneralEvaluationDomain::<E::ScalarField>::new(
-                shares_num,
-            )
-            .unwrap();
-
-        // domain points: - ω_j in Ω
-        let domain_points = fft_domain.elements().collect::<Vec<_>>();
-
-        // `evals` are evaluations of the polynomial f over the domain, omega: f(ω_j) for ω_j in Ω
-        let evals = threshold_poly.evaluate_over_domain_by_ref(fft_domain);
-
-        // A_j, share commitments of participants:  [f(ω_j)] G
-        let share_commitments = fast_multiexp(&evals.evals, g.into_group());
-
-        // Z_j, private key shares of participants (unblinded): [f(ω_j)] H
-        // NOTE: In production, these are never produced this way, as the DKG
-        // directly generates blinded shares Y_j. Only then, node j can use their
-        // validator key to unblind Y_j and obtain the private key share Z_j.
-        let privkey_shares = fast_multiexp(&evals.evals, h.into_group());
-
-        // The shared secret is the free coefficient from threshold poly
-        let a_0 = threshold_poly.coeffs[0];
-
-        // F_0, group's public key
-        let group_pubkey = g.mul(a_0);
-
-        // group's private key (NOTE: just for tests, this is NEVER constructed in production)
-        let group_privkey = h.mul(a_0);
-
-        // As in SSS, shared secret should be f(0), which is also the free coefficient
-        let secret = threshold_poly.evaluate(&E::ScalarField::zero());
-        debug_assert!(secret == a_0);
-
-        let mut private_contexts = vec![];
-        let mut public_contexts = vec![];
-
-        // (domain_point, A, Z)
-        for (index, (domain_point, share_commit, private_share)) in izip!(
-            domain_points.iter(),
-            share_commitments.iter(),
-            privkey_shares.iter()
-        )
-        .enumerate()
-        {
-            let private_key_share = PrivateKeyShare::<E>(*private_share);
-            let blinding_factor = E::ScalarField::rand(rng);
-
-            let validator_public_key = h.mul(blinding_factor).into_affine();
-            let blinded_key_share = BlindedKeyShare::<E> {
-                validator_public_key,
-                blinded_key_share: private_key_share
-                    .0
-                    .mul(blinding_factor)
-                    .into_affine(),
-            };
-
-            private_contexts.push(PrivateDecryptionContextSimple::<E> {
-                index,
-                setup_params: SetupParams {
-                    b: blinding_factor,
-                    b_inv: blinding_factor.inverse().unwrap(),
-                    g,
-                    h_inv: E::G2Prepared::from(-h.into_group()),
-                    g_inv: E::G1Prepared::from(-g.into_group()),
-                    h,
-                },
-                private_key_share,
-                public_decryption_contexts: vec![],
-            });
-            public_contexts.push(PublicDecryptionContextSimple::<E> {
-                domain: *domain_point,
-                share_commitment: ShareCommitment::<E>(*share_commit),
-                blinded_key_share,
-                validator_public_key: ferveo_common::PublicKey {
-                    encryption_key: blinded_key_share.validator_public_key,
-                },
-            });
-        }
-        for private_ctxt in private_contexts.iter_mut() {
-            private_ctxt.public_decryption_contexts = public_contexts.clone();
-        }
-
-        (
-            DkgPublicKey(group_pubkey.into()),
-            PrivateKeyShare(group_privkey.into()), // TODO: Not the correct type since it's a DKG private key, which are never created in the protocol, but it's just for testing
-            private_contexts,
-        )
-    }
-
-    pub fn setup_precomputed<E: Pairing>(
-        shares_num: usize,
-        threshold: usize,
-        rng: &mut impl rand::Rng,
-    ) -> (
-        DkgPublicKey<E>,
-        PrivateKeyShare<E>,
-        Vec<PrivateDecryptionContextSimple<E>>,
-    ) {
-        setup_simple::<E>(shares_num, threshold, rng)
-    }
-
-    pub fn create_shared_secret_simple<E: Pairing>(
-        pub_contexts: &[PublicDecryptionContextSimple<E>],
-        decryption_shares: &[DecryptionShareSimple<E>],
-    ) -> SharedSecret<E> {
-        let domain = pub_contexts.iter().map(|c| c.domain).collect::<Vec<_>>();
-        let lagrange_coeffs = prepare_combine_simple::<E>(&domain);
-        share_combine_simple::<E>(decryption_shares, &lagrange_coeffs)
-    }
-}
-
 #[cfg(all(test, feature = "parity-codec"))]
 mod tests {
     use std::ops::Mul;
@@ -219,11 +80,7 @@ mod tests {
     use ferveo_common::{FromBytes, ToBytes};
     use rand::seq::IteratorRandom;
 
-    use crate::{
-        DecryptionSharePrecomputed,
-        ciphertext::RawCiphertext,
-        test_common::{create_shared_secret_simple, setup_simple, *},
-    };
+    use crate::*;
 
     type E = ark_bls12_381::Bls12_381;
     type TargetField = <E as Pairing>::TargetField;
@@ -237,7 +94,9 @@ mod tests {
         let msg = "my-msg".as_bytes().to_vec();
         let aad: &[u8] = "my-aad".as_bytes();
 
-        let (pubkey, _, _) = setup_simple::<E>(threshold, shares_num, rng);
+        let DealerOutput {
+            public_key: pubkey, ..
+        } = deal::<E>(shares_num, threshold, rng);
 
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
@@ -271,8 +130,11 @@ mod tests {
         let msg = "my-msg".as_bytes().to_vec();
         let aad: &[u8] = "my-aad".as_bytes();
 
-        let (pubkey, _, contexts) =
-            setup_simple::<E>(shares_num, threshold, rng);
+        let DealerOutput {
+            public_key: pubkey,
+            private_contexts: contexts,
+            ..
+        } = deal::<E>(shares_num, threshold, rng);
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
         let bad_aad = "bad aad".as_bytes();
@@ -291,8 +153,11 @@ mod tests {
         let msg = String::from("my-msg");
         let aad: &[u8] = "my-aad".as_bytes();
 
-        let (pubkey, _, contexts) =
-            setup_simple::<E>(shares_num, threshold, &mut rng);
+        let DealerOutput {
+            public_key: pubkey,
+            private_contexts: contexts,
+            ..
+        } = deal::<E>(shares_num, threshold, &mut rng);
 
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
@@ -333,8 +198,11 @@ mod tests {
         let msg = "my-msg".to_string();
         let aad = "my-aad".as_bytes();
 
-        let (pubkey, _, contexts) =
-            setup_simple::<E>(shares_num, threshold, &mut rng);
+        let DealerOutput {
+            public_key: pubkey,
+            private_contexts: contexts,
+            ..
+        } = deal::<E>(shares_num, threshold, &mut rng);
 
         let ciphertext = encrypt::<E, _>(&msg, aad, &pubkey, rng).unwrap();
 
@@ -362,8 +230,11 @@ mod tests {
         let msg = "my-msg".as_bytes().to_vec();
         let aad: &[u8] = "my-aad".as_bytes();
 
-        let (pubkey, _, contexts) =
-            setup_precomputed::<E>(shares_num, threshold, &mut rng);
+        let DealerOutput {
+            public_key: pubkey,
+            private_contexts: contexts,
+            ..
+        } = deal::<E>(shares_num, threshold, &mut rng);
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
         let selected_participants =
@@ -409,8 +280,11 @@ mod tests {
         let msg = "my-msg".as_bytes().to_vec();
         let aad: &[u8] = "my-aad".as_bytes();
 
-        let (pubkey, _, contexts) =
-            setup_simple::<E>(shares_num, threshold, &mut rng);
+        let DealerOutput {
+            public_key: pubkey,
+            private_contexts: contexts,
+            ..
+        } = deal::<E>(shares_num, threshold, &mut rng);
 
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 

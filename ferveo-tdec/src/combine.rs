@@ -2,18 +2,17 @@
 
 use ark_ec::pairing::Pairing;
 use ark_ff::{Field, One, PrimeField, Zero};
-use ferveo_common::serialization;
 use itertools::izip;
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-#[serde_as]
+use crate::utils::ark_serde;
+
 #[derive(
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
 )]
 pub struct SharedSecret<E: Pairing>(
-    #[serde_as(as = "serialization::SerdeAs")] pub(crate) E::TargetField,
+    #[serde(with = "ark_serde")] pub(crate) E::TargetField,
 );
 
 use crate::{DecryptionSharePrecomputed, DecryptionShareSimple};
@@ -23,11 +22,11 @@ pub fn prepare_combine_simple<E: Pairing>(
 ) -> Vec<E::ScalarField> {
     // In this formula x_i = 0, hence numerator is x_m
     // See https://en.wikipedia.org/wiki/Lagrange_polynomial#Optimal_algorithm
-    lagrange_basis_at::<E>(domain, &E::ScalarField::zero())
+    lagrange_coefficients_at::<E>(domain, &E::ScalarField::zero())
 }
 
 /// Calculate lagrange coefficients using optimized formula
-pub fn lagrange_basis_at<E: Pairing>(
+pub fn lagrange_coefficients_at<E: Pairing>(
     shares_x: &[E::ScalarField],
     x_i: &E::ScalarField,
 ) -> Vec<<E>::ScalarField> {

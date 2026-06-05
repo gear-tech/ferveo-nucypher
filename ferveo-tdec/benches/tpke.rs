@@ -4,7 +4,7 @@ use ark_bls12_381::{Bls12_381, Fr};
 use criterion::{
     BenchmarkId, Criterion, black_box, criterion_group, criterion_main,
 };
-use ferveo_nucypher_tdec::{test_common::setup_simple, *};
+use ferveo_nucypher_tdec::*;
 use rand::prelude::StdRng;
 use rand_core::{RngCore, SeedableRng};
 
@@ -42,8 +42,11 @@ impl SetupSimple {
         rng.fill_bytes(&mut msg[..]);
         let aad: &[u8] = "my-aad".as_bytes();
 
-        let (pubkey, privkey, contexts) =
-            setup_simple::<E>(shares_num, threshold, rng);
+        let DealerOutput {
+            public_key: pubkey,
+            private_key: privkey,
+            private_contexts: contexts,
+        } = deal::<E>(shares_num, threshold, rng);
 
         // Ciphertext.commitment is already computed to match U
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
@@ -106,7 +109,7 @@ pub fn bench_create_decryption_share(c: &mut Criterion) {
                         .map(|ctx| {
                             // Using create_unchecked here to avoid the cost of verifying the ciphertext
                             DecryptionShareSimple::create_unchecked(
-                                &ctx.setup_params.b,
+                                &ctx.validator_decryption_key,
                                 &ctx.private_key_share,
                                 &setup.shared.ciphertext.header().unwrap(),
                             )
@@ -409,7 +412,7 @@ pub fn bench_decryption_share_validity_checks(c: &mut Criterion) {
 //             |b| {
 //                 b.iter(|| {
 //                     black_box(refresh_private_key_share::<E>(
-//                         &p.setup_params.h.into_group(),
+//                         &ark_bls12_381::G2Affine::generator().into_group(),
 //                         &p.public_decryption_contexts[0].domain,
 //                         &polynomial,
 //                         &p.private_key_share,

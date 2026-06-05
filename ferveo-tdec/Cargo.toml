@@ -12,6 +12,9 @@ readme = "README.md"
 bench = false
 
 [dependencies]
+# workspace deps
+subproductdomain.workspace = true 
+
 ark-bls12-381 = { workspace = true }
 ark-ec = { workspace = true }
 ark-ff = { workspace = true }
@@ -23,19 +26,17 @@ chacha20poly1305 = { workspace = true }
 ferveo-common = { package = "ferveo-nucypher-common", path = "../ferveo-common", version = "^0.4.0" }
 itertools = { workspace = true }
 rand = { workspace = true }
-rand_core = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_bytes = { workspace = true }
-serde_with = { workspace = true }
 sha2 = { workspace = true }
-subproductdomain = { package = "subproductdomain-nucypher", path = "../subproductdomain", version = "^0.4.0" }
 thiserror = { workspace = true }
 zeroize = { workspace = true, features = ["derive"] }
-parity-scale-codec = {workspace = true, optional = true}
+parity-scale-codec = {workspace = true, optional = true, features = ["derive"]}
 
 [dev-dependencies]
 criterion = { workspace = true, features = ["html_reports"] }
 hex = { workspace = true }
+rand_core = { workspace = true }
 
 [package.metadata.cargo-machete]
 ignored = ["serde_bytes"]
@@ -44,7 +45,6 @@ ignored = ["serde_bytes"]
 name = "tpke"
 path = "benches/tpke.rs"
 harness = false
-required-features = ["test-common"]
 
 [[bench]]
 name = "arkworks"
@@ -55,4 +55,3 @@ harness = false
 default = ["bls12_381", "parity-codec"]
 bls12_381 = []
 parity-codec = ["dep:parity-scale-codec"]
-test-common = []
