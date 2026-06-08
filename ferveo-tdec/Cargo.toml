@@ -2,7 +2,11 @@
 name = "ferveo-nucypher-tdec"
 version = "0.4.0"
 edition = "2024"
-authors = ["David Nuñez <david@nucypher.com>", "Piotr Roslaniec <p.roslaniec@gmail.com>", "Heliax AG <hello@heliax.dev>"]
+authors = [
+    "David Nuñez <david@nucypher.com>",
+    "Piotr Roslaniec <p.roslaniec@gmail.com>",
+    "Heliax AG <hello@heliax.dev>",
+]
 license = "GPL-3.0"
 description = "Threshold signature and encryption using group secret key"
 repository = "https://github.com/nucypher/ferveo/"
@@ -13,7 +17,7 @@ bench = false
 
 [dependencies]
 # workspace deps
-subproductdomain.workspace = true 
+subproductdomain.workspace = true
 
 ark-bls12-381 = { workspace = true }
 ark-ec = { workspace = true }
@@ -31,12 +35,16 @@ serde_bytes = { workspace = true }
 sha2 = { workspace = true }
 thiserror = { workspace = true }
 zeroize = { workspace = true, features = ["derive"] }
-parity-scale-codec = {workspace = true, optional = true, features = ["derive"]}
+parity-scale-codec = { workspace = true, optional = true, features = [
+    "derive",
+] }
+const-hex = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
 criterion = { workspace = true, features = ["html_reports"] }
 hex = { workspace = true }
 rand_core = { workspace = true }
+serde_json = { version = "1" }
 
 [package.metadata.cargo-machete]
 ignored = ["serde_bytes"]

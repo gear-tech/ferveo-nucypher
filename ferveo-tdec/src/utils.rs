@@ -1,6 +1,5 @@
-pub mod ark_serde {
+pub mod ark_serde_hex {
     use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-    use serde::{Deserialize, Serialize};
 
     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -12,7 +11,7 @@ pub mod ark_serde {
             .serialize_compressed(&mut bytes)
             .map_err(serde::ser::Error::custom)?;
 
-        serde_bytes::ByteBuf::from(bytes).serialize(serializer)
+        const_hex::serialize(bytes, serializer)
     }
 
     pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
@@ -20,8 +19,9 @@ pub mod ark_serde {
         T: CanonicalDeserialize,
         D: serde::Deserializer<'de>,
     {
-        let bytes = serde_bytes::ByteBuf::deserialize(deserializer)?;
+        let bytes: Vec<u8> = const_hex::deserialize(deserializer)?;
         T::deserialize_compressed(&mut bytes.as_slice())
             .map_err(serde::de::Error::custom)
     }
 }
+

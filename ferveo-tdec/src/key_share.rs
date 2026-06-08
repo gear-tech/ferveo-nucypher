@@ -8,17 +8,17 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::{
     CiphertextHeader, DecryptionSharePrecomputed, DecryptionShareSimple,
-    DomainPoint, Result, prepare_combine_simple, utils::ark_serde,
+    DomainPoint, Result, prepare_combine_simple, utils::ark_serde_hex,
 };
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DkgPublicKey<E: Pairing>(
-    #[serde(with = "ark_serde")] pub E::G1Affine,
+    #[serde(with = "ark_serde_hex")] pub E::G1Affine,
 );
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ShareCommitment<E: Pairing>(
-    #[serde(with = "ark_serde")] pub E::G1Affine, // A_{i, \omega_i}
+    #[serde(with = "ark_serde_hex")] pub E::G1Affine, // A_{i, \omega_i}
 );
 
 // TODO: Improve by adding share commitment here
@@ -116,5 +116,5 @@ impl<E: Pairing> BlindedKeyShare<E> {
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
 )]
 pub struct PrivateKeyShare<E: Pairing>(
-    #[serde(with = "ark_serde")] pub E::G2Affine,
+    #[serde(with = "ark_serde_hex")] pub E::G2Affine,
 );
