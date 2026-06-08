@@ -436,7 +436,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ciphertext_serde() {
+    fn ciphertext_serde_correct() {
         let ciphertext = Ciphertext::<E, u64> {
             commitment: <E as Pairing>::G1Affine::default(),
             auth_tag: <E as Pairing>::G2Affine::default(),
@@ -445,6 +445,9 @@ mod tests {
         };
 
         let serialized = serde_json::to_string_pretty(&ciphertext).unwrap();
-        println!("{serialized}");
+        let deserialized: Ciphertext<E, u64> =
+            serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(deserialized, ciphertext);
     }
 }

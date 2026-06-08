@@ -38,8 +38,8 @@ pub mod bls12_381;
 
 /// Re-exports [rand::Rng] crate.
 pub mod rand_utils {
-    pub use rand::Rng;
     pub use ark_std::test_rng;
+    pub use rand::Rng;
 }
 
 #[derive(Debug, thiserror::Error)]
