@@ -17,6 +17,7 @@ use crate::{
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[cfg_attr(feature = "parity-codec", derive(scale_info::TypeInfo))]
 pub struct Ciphertext<E: Pairing, T = Raw> {
     // U
     #[serde(with = "ark_serde_hex")]

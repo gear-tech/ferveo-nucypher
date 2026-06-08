@@ -38,6 +38,7 @@ zeroize = { workspace = true, features = ["derive"] }
 parity-scale-codec = { workspace = true, optional = true, features = [
     "derive",
 ] }
+scale-info = {workspace = true, optional = true}
 const-hex = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
@@ -62,4 +63,4 @@ harness = false
 [features]
 default = ["bls12_381", "parity-codec"]
 bls12_381 = []
-parity-codec = ["dep:parity-scale-codec"]
+parity-codec = ["dep:parity-scale-codec", "dep:scale-info"]
