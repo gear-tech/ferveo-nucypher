@@ -13,20 +13,20 @@ use zeroize::{ZeroizeOnDrop, Zeroizing};
 
 use crate::{
     Codec, DkgPublicKey, Error, PrivateKeyShare, Result, SharedSecret,
-    htp_bls12381_g2, utils::ark_serde,
+    htp_bls12381_g2, utils::ark_serde_hex,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Ciphertext<E: Pairing, T = Raw> {
     // U
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_hex")]
     pub commitment: E::G1Affine,
     // W
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_hex")]
     pub auth_tag: E::G2Affine,
     /// The ciphertext itself.
     /// Created using [chacha20poly1305::ChaCha20Poly1305::encrypt].
-    #[serde(with = "serde_bytes")]
+    #[serde(with = "const_hex")]
     pub ciphertext: Vec<u8>,
     /// Inner type the ciphertext bind to.
     #[serde(skip)]
@@ -134,9 +134,9 @@ impl<E: Pairing, T> Ciphertext<E, T> {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CiphertextHeader<E: Pairing> {
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_hex")]
     pub commitment: E::G1Affine,
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_hex")]
     pub auth_tag: E::G2Affine,
     pub ciphertext_hash: [u8; 32],
 }
@@ -378,6 +378,8 @@ fn construct_tag_hash<E: Pairing>(
 
 #[cfg(test)]
 mod tests {
+    use std::marker::PhantomData;
+
     use ark_std::test_rng;
 
     use crate::*;
@@ -431,5 +433,21 @@ mod tests {
         // Malformed the AAD
         let aad = "bad aad".as_bytes();
         assert!(ciphertext.check(aad).is_err());
+    }
+
+    #[test]
+    fn ciphertext_serde_correct() {
+        let ciphertext = Ciphertext::<E, u64> {
+            commitment: <E as Pairing>::G1Affine::default(),
+            auth_tag: <E as Pairing>::G2Affine::default(),
+            ciphertext: vec![1u8, 2u8, 3u8],
+            _type: PhantomData,
+        };
+
+        let serialized = serde_json::to_string_pretty(&ciphertext).unwrap();
+        let deserialized: Ciphertext<E, u64> =
+            serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(deserialized, ciphertext);
     }
 }

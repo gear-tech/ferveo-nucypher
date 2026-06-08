@@ -7,12 +7,12 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::{
     Ciphertext, CiphertextHeader, PrivateKeyShare,
-    PublicDecryptionContextSimple, Result, utils::ark_serde,
+    PublicDecryptionContextSimple, Result, utils::ark_serde_hex,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct ValidatorShareChecksum<E: Pairing> {
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_hex")]
     pub checksum: E::G1Affine,
 }
 
@@ -63,7 +63,7 @@ impl<E: Pairing> ValidatorShareChecksum<E> {
 /// client side int order to be combined.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecryptionShareSimple<E: Pairing> {
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_hex")]
     pub decryption_share: E::TargetField,
     #[serde(bound(
         serialize = "ValidatorShareChecksum<E>: Serialize",
@@ -134,7 +134,7 @@ impl<E: Pairing> DecryptionShareSimple<E> {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecryptionSharePrecomputed<E: Pairing> {
     pub decrypter_index: usize,
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_hex")]
     pub decryption_share: E::TargetField,
     #[serde(bound(
         serialize = "ValidatorShareChecksum<E>: Serialize",

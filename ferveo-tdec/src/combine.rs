@@ -6,13 +6,13 @@ use itertools::izip;
 use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-use crate::utils::ark_serde;
+use crate::utils::ark_serde_hex;
 
 #[derive(
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
 )]
 pub struct SharedSecret<E: Pairing>(
-    #[serde(with = "ark_serde")] pub(crate) E::TargetField,
+    #[serde(with = "ark_serde_hex")] pub(crate) E::TargetField,
 );
 
 use crate::{DecryptionSharePrecomputed, DecryptionShareSimple};
