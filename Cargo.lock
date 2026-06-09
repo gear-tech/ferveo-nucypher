@@ -1016,6 +1016,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f1f227452a390804cdb637b74a86990f2a7d7ba4b7d5693aac9b4dd6defd8d6"
 
 [[package]]
+name = "ferveo-gear-tdec"
+version = "0.4.0"
+dependencies = [
+ "ark-bls12-381",
+ "ark-ec",
+ "ark-ff",
+ "ark-poly",
+ "ark-serialize",
+ "ark-std",
+ "bincode",
+ "chacha20poly1305",
+ "const-hex",
+ "criterion",
+ "ferveo-nucypher-common",
+ "hex",
+ "itertools 0.10.5",
+ "parity-scale-codec",
+ "rand 0.8.6",
+ "rand_core 0.6.4",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "sha2",
+ "subproductdomain-nucypher",
+ "thiserror 1.0.69",
+ "zeroize",
+]
+
+[[package]]
 name = "ferveo-nucypher"
 version = "0.4.0"
 dependencies = [
@@ -1029,8 +1058,8 @@ dependencies = [
  "cargo-smart-release",
  "criterion",
  "digest",
+ "ferveo-gear-tdec",
  "ferveo-nucypher-common",
- "ferveo-nucypher-tdec",
  "generic-array",
  "hex",
  "itertools 0.10.5",
@@ -1058,35 +1087,6 @@ dependencies = [
  "rand 0.8.6",
  "serde",
  "serde_with",
-]
-
-[[package]]
-name = "ferveo-nucypher-tdec"
-version = "0.4.0"
-dependencies = [
- "ark-bls12-381",
- "ark-ec",
- "ark-ff",
- "ark-poly",
- "ark-serialize",
- "ark-std",
- "bincode",
- "chacha20poly1305",
- "const-hex",
- "criterion",
- "ferveo-nucypher-common",
- "hex",
- "itertools 0.10.5",
- "parity-scale-codec",
- "rand 0.8.6",
- "rand_core 0.6.4",
- "serde",
- "serde_bytes",
- "serde_json",
- "sha2",
- "subproductdomain-nucypher",
- "thiserror 1.0.69",
- "zeroize",
 ]
 
 [[package]]
