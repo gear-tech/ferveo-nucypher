@@ -22,7 +22,7 @@ ark-serialize = { workspace = true }
 ark-std = { workspace = true }
 bincode = { workspace = true }
 ferveo-common = { package = "ferveo-nucypher-common", path = "../ferveo-common", version = "^0.4.0" }
-ferveo-tdec = { package = "ferveo-nucypher-tdec", path = "../ferveo-tdec", features = ["bls12_381"], version = "^0.4.0" }
+ferveo-tdec = { package = "ferveo-gear-tdec", path = "../ferveo-tdec", features = ["bls12_381"], version = "^0.4.0" }
 hex = { workspace = true }
 itertools = { workspace = true }
 rand = { workspace = true }

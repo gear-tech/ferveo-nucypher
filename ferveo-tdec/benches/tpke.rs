@@ -4,7 +4,7 @@ use ark_bls12_381::{Bls12_381, Fr};
 use criterion::{
     BenchmarkId, Criterion, black_box, criterion_group, criterion_main,
 };
-use ferveo_nucypher_tdec::*;
+use ferveo_gear_tdec::*;
 use rand::prelude::StdRng;
 use rand_core::{RngCore, SeedableRng};
 

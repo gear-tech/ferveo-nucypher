@@ -20,7 +20,7 @@ We're currently not releasing Python and WASM bindings, we're only releasing the
 You can either specify all of the packages in the workspace, or just the ones you want to release. The full list is:
 - `ferveo-nucypher-common`
 - `subproductdomain-nucypher`
-- `ferveo-nucypher-tdec`
+- `ferveo-gear-tdec`
 - `ferveo-nucypher`
 
 
@@ -30,7 +30,7 @@ In order to release all of the packages, run the following from the `main` branc
 cargo smart-release \
   ferveo-nucypher-common \
   subproductdomain-nucypher \
-  ferveo-nucypher-tdec \
+  ferveo-gear-tdec \
   ferveo-nucypher \
   --update-crates-index
 ```
@@ -44,7 +44,7 @@ Inspect the changes and confirm the release:
 cargo smart-release \
   ferveo-nucypher-common \
   subproductdomain-nucypher \
-  ferveo-nucypher-tdec \
+  ferveo-gear-tdec \
   ferveo-nucypher \
   --update-crates-index --execute
 ```
