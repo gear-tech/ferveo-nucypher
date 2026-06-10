@@ -94,14 +94,10 @@ fn make_prepared_pairing_inputs(
     rng: &mut StdRng,
 ) -> (Vec<G1Prepared>, Vec<G2Prepared>) {
     let (p, q) = make_pairing_inputs(size, rng);
-    let p = p
-        .into_iter()
-        .map(|i| G1Prepared::from(i))
-        .collect::<Vec<G1Prepared>>();
-    let q = q
-        .into_iter()
-        .map(|i| G2Prepared::from(i))
-        .collect::<Vec<G2Prepared>>();
+    let p =
+        p.into_iter().map(|i| G1Prepared::from(i)).collect::<Vec<G1Prepared>>();
+    let q =
+        q.into_iter().map(|i| G2Prepared::from(i)).collect::<Vec<G2Prepared>>();
     (p, q)
 }
 

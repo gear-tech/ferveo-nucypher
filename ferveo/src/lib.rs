@@ -134,11 +134,8 @@ mod test_dkg_full {
         ciphertext_header: &ferveo_tdec::CiphertextHeader<E>,
         validator_keypairs: &[Keypair<E>],
         transcripts: &[PubliclyVerifiableSS<E>],
-    ) -> (
-        AggregatedTranscript<E>,
-        Vec<DecryptionShareSimple<E>>,
-        SharedSecret<E>,
-    ) {
+    ) -> (AggregatedTranscript<E>, Vec<DecryptionShareSimple<E>>, SharedSecret<E>)
+    {
         let server_aggregate =
             AggregatedTranscript::from_transcripts(transcripts).unwrap();
         assert!(
@@ -811,9 +808,8 @@ mod test_dkg_full {
         // The departing validator uses the handover transcript produced by the
         // incoming validator to create a new aggregate transcript.
         // This part is showing the high-level API for handover finalization.
-        let departing_keypair = validator_keypairs
-            .get(handover_slot_index as usize)
-            .unwrap();
+        let departing_keypair =
+            validator_keypairs.get(handover_slot_index as usize).unwrap();
         assert_eq!(
             departing_validator.public_key,
             departing_keypair.public_key()

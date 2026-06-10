@@ -197,9 +197,7 @@ impl Dkg {
         &self,
         messages: &[ValidatorMessage],
     ) -> Result<AggregatedTranscript> {
-        self.0
-            .aggregate_transcripts(messages)
-            .map(AggregatedTranscript)
+        self.0.aggregate_transcripts(messages).map(AggregatedTranscript)
     }
 
     pub fn generate_refresh_transcript<R: RngCore>(
@@ -243,10 +241,8 @@ pub struct HandoverTranscript(crate::HandoverTranscript<E>);
 
 impl AggregatedTranscript {
     pub fn new(messages: &[ValidatorMessage]) -> Result<Self> {
-        let transcripts: Vec<_> = messages
-            .iter()
-            .map(|(_, transcript)| transcript.clone())
-            .collect();
+        let transcripts: Vec<_> =
+            messages.iter().map(|(_, transcript)| transcript.clone()).collect();
         let aggregated_transcript =
             crate::AggregatedTranscript::<E>::from_transcripts(&transcripts)?;
         Ok(AggregatedTranscript(aggregated_transcript))
@@ -272,11 +268,8 @@ impl AggregatedTranscript {
             return Err(Error::InvalidTranscriptAggregate);
         }
 
-        let validators: Vec<_> = messages
-            .iter()
-            .map(|(validator, _)| validator)
-            .cloned()
-            .collect();
+        let validators: Vec<_> =
+            messages.iter().map(|(validator, _)| validator).cloned().collect();
         let pvss_list = messages
             .iter()
             .map(|(_validator, transcript)| transcript)
@@ -332,10 +325,7 @@ impl AggregatedTranscript {
             dkg.0.me.share_index,
         )?;
         let domain_point = dkg.0.get_domain_point(dkg.0.me.share_index)?;
-        Ok(DecryptionShareSimple {
-            share,
-            domain_point,
-        })
+        Ok(DecryptionShareSimple { share, domain_point })
     }
 
     pub fn public_key(&self) -> DkgPublicKey {
@@ -767,11 +757,9 @@ mod test_ferveo_api {
             messages[security_threshold as usize - 1].0.clone(),
             dkg.generate_transcript(rng).unwrap(),
         );
-        let mixed_messages = [
-            &messages[..(security_threshold - 1) as usize],
-            &[bad_message],
-        ]
-        .concat();
+        let mixed_messages =
+            [&messages[..(security_threshold - 1) as usize], &[bad_message]]
+                .concat();
         assert_eq!(mixed_messages.len(), security_threshold as usize);
         let bad_aggregate = dkg.aggregate_transcripts(&mixed_messages).unwrap();
         assert!(matches!(
@@ -958,10 +946,8 @@ mod test_ferveo_api {
         // their own aggregates before the off-boarding of the validator
         // If we didn't create this aggregate here, we risk having a "dangling validator message"
         // later when we off-board the validator
-        let aggregated_transcript = dkgs[0]
-            .clone()
-            .aggregate_transcripts(messages.as_slice())
-            .unwrap();
+        let aggregated_transcript =
+            dkgs[0].clone().aggregate_transcripts(messages.as_slice()).unwrap();
         assert!(
             aggregated_transcript
                 .verify(validators_num, messages.as_slice())
@@ -1186,9 +1172,7 @@ mod test_ferveo_api {
 
                 // Each participant updates their own DKG aggregate
                 // using the UpdateTranscripts of all participants
-                aggregate
-                    .refresh(&update_transcripts, &validator_map)
-                    .unwrap()
+                aggregate.refresh(&update_transcripts, &validator_map).unwrap()
             })
             .collect();
 

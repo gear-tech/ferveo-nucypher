@@ -20,9 +20,7 @@ pub mod ark_serde {
         S: Serializer,
     {
         let mut bytes = Vec::with_capacity(value.compressed_size());
-        value
-            .serialize_compressed(&mut bytes)
-            .map_err(ser::Error::custom)?;
+        value.serialize_compressed(&mut bytes).map_err(ser::Error::custom)?;
         serializer.serialize_bytes(&bytes)
     }
 
@@ -71,9 +69,7 @@ pub mod ark_serde_hex {
         S: Serializer,
     {
         let mut bytes = Vec::with_capacity(value.compressed_size());
-        value
-            .serialize_compressed(&mut bytes)
-            .map_err(ser::Error::custom)?;
+        value.serialize_compressed(&mut bytes).map_err(ser::Error::custom)?;
         const_hex::serialize(bytes, serializer)
     }
 

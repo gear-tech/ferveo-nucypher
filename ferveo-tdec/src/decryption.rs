@@ -106,10 +106,7 @@ impl<E: Pairing> DecryptionShareSimple<E> {
             ciphertext_header,
         )?;
 
-        Ok(Self {
-            decryption_share,
-            validator_checksum,
-        })
+        Ok(Self { decryption_share, validator_checksum })
     }
     /// Verify that the decryption share is valid.
     pub fn verify<T>(

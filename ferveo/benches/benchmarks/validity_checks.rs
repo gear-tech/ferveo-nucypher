@@ -55,10 +55,7 @@ fn setup_dkg(
 fn setup(
     shares_num: u32,
     rng: &mut StdRng,
-) -> (
-    PubliclyVerifiableDkg<Bls12_381>,
-    PubliclyVerifiableSS<Bls12_381>,
-) {
+) -> (PubliclyVerifiableDkg<Bls12_381>, PubliclyVerifiableSS<Bls12_381>) {
     let mut transcripts = vec![];
     for i in 0..shares_num {
         let dkg = setup_dkg(i as usize, shares_num);

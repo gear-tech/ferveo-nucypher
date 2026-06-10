@@ -25,9 +25,7 @@ pub fn poly_from_scalar<F: FftField>(s: &F) -> DensePolynomial<F> {
 
 #[allow(dead_code)]
 pub fn moduli_from_scalar<F: FftField>(s: &F) -> DensePolynomial<F> {
-    DensePolynomial::<F> {
-        coeffs: vec![-*s, F::one()],
-    }
+    DensePolynomial::<F> { coeffs: vec![-*s, F::one()] }
 }
 
 /// Where indicated, algorithms are from Modern Computer Algebra, 3rd edition, by Gathen and Gerhard
@@ -86,9 +84,7 @@ pub fn fast_divide_monic<F: FftField>(
 
     if func.coeffs().len() < divisor.coeffs().len() {
         return (
-            DensePolynomial::<F> {
-                coeffs: vec![F::zero()],
-            },
+            DensePolynomial::<F> { coeffs: vec![F::zero()] },
             func.clone(),
         );
     }
@@ -197,11 +193,7 @@ impl<F: FftField> SubproductTree<F> {
             let left = Box::new(SubproductTree::new(u_0));
             let right = Box::new(SubproductTree::new(u_1));
             let m = &left.m * &right.m;
-            SubproductTree {
-                left: Some(left),
-                right: Some(right),
-                m,
-            }
+            SubproductTree { left: Some(left), right: Some(right), m }
         }
     }
     /// GG algorithm 9.5
@@ -362,9 +354,7 @@ pub fn toeplitz_mul<E: Pairing, const NORMALIZE: bool>(
 
     Ok((
         tmp[..toeplitz_size].to_vec(),
-        E::ScalarField::from(domain.size() as u128)
-            .inverse()
-            .unwrap(),
+        E::ScalarField::from(domain.size() as u128).inverse().unwrap(),
     ))
 }
 

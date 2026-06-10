@@ -114,9 +114,7 @@ impl<E: Pairing> Keypair<E> {
 
     /// Creates a new ephemeral session key for participating in the DKG
     pub fn new<R: RngCore>(rng: &mut R) -> Self {
-        Self {
-            decryption_key: E::ScalarField::rand(rng),
-        }
+        Self { decryption_key: E::ScalarField::rand(rng) }
     }
 
     pub fn secure_randomness_size() -> usize {

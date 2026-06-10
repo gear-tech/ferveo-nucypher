@@ -152,12 +152,7 @@ impl<E: Pairing, T> PubliclyVerifiableSS<E, T> {
         // TODO: Cross check proof of knowledge check with the whitepaper; this check proves that there is a relationship between the secret and the pvss transcript - #201
         // Sigma is a proof of knowledge of the secret, sigma = h^s
         let sigma = E::G2Affine::generator().mul(*s).into(); // TODO: Use hash-to-curve here? This can break compatibility - #195
-        let vss = Self {
-            coeffs,
-            shares,
-            sigma,
-            phantom: Default::default(),
-        };
+        let vss = Self { coeffs, shares, sigma, phantom: Default::default() };
         Ok(vss)
     }
 
@@ -522,10 +517,7 @@ impl<E: Pairing> AggregatedTranscript<E> {
         aggregate: PubliclyVerifiableSS<E, Aggregated>,
     ) -> Result<Self> {
         let public_key = ferveo_tdec::DkgPublicKey::<E>(aggregate.coeffs[0]);
-        Ok(AggregatedTranscript {
-            aggregate,
-            public_key,
-        })
+        Ok(AggregatedTranscript { aggregate, public_key })
     }
 }
 

@@ -178,11 +178,7 @@ impl<E: Pairing> ShareUpdate<E> {
             target_validator_public_key.encryption_key;
         let is_valid = E::pairing(E::G1::generator(), self.update)
             == E::pairing(self.commitment, public_key_point);
-        if is_valid {
-            Ok(true)
-        } else {
-            Err(Error::InvalidShareUpdate)
-        }
+        if is_valid { Ok(true) } else { Err(Error::InvalidShareUpdate) }
     }
 }
 
@@ -247,9 +243,7 @@ impl<E: Pairing> UpdateTranscript<E> {
 
         for (index, update) in self.updates.iter() {
             // Next, validate share updates against their corresponding target validators
-            update
-                .verify(validator_public_keys.get(index).unwrap())
-                .unwrap();
+            update.verify(validator_public_keys.get(index).unwrap()).unwrap();
 
             // Finally, validate update commitments against update polynomial commitments
             let expected_commitment = reconstructed_commitments
@@ -403,12 +397,9 @@ impl<E: Pairing> HandoverTranscript<E> {
         if !is_valid {
             return Err(Error::InvalidShareUpdate); // TODO: Make this more specific
         }
-        let new_blinded_share_element = &self.double_blind_share.mul(
-            departing_validator_keypair
-                .decryption_key
-                .inverse()
-                .unwrap(),
-        );
+        let new_blinded_share_element = &self
+            .double_blind_share
+            .mul(departing_validator_keypair.decryption_key.inverse().unwrap());
         Ok(BlindedKeyShare::<E> {
             validator_public_key: self.incoming_pubkey.encryption_key,
             blinded_key_share: new_blinded_share_element.into_affine(),
@@ -450,10 +441,7 @@ fn prepare_share_updates_with_root<E: Pairing>(
         })
         .collect::<HashMap<u32, ShareUpdate<E>>>();
 
-    UpdateTranscript {
-        coeffs: coeff_commitments,
-        updates: share_updates,
-    }
+    UpdateTranscript { coeffs: coeff_commitments, updates: share_updates }
 }
 
 /// Generate a random polynomial with a given root
@@ -536,10 +524,8 @@ mod tests_refresh {
         let rng = &mut test_rng();
         let security_threshold = shares_num * 2 / 3;
 
-        let DealerOutput {
-            private_contexts: mut contexts,
-            ..
-        } = deal::<E>(shares_num as usize, security_threshold as usize, rng);
+        let DealerOutput { private_contexts: mut contexts, .. } =
+            deal::<E>(shares_num as usize, security_threshold as usize, rng);
 
         // Prepare participants
 
@@ -879,9 +865,8 @@ mod tests_refresh {
         // TODO: This is a low-level check for now. This will be part of the handover protocol.
         let departing_validator_private_key =
             departing_participant.validator_decryption_key;
-        let departing_validator_keypair = Keypair::<E> {
-            decryption_key: departing_validator_private_key,
-        };
+        let departing_validator_keypair =
+            Keypair::<E> { decryption_key: departing_validator_private_key };
         let new_blinded_share = handover_transcript
             .finalize(
                 &departing_validator_keypair,
@@ -892,9 +877,8 @@ mod tests_refresh {
         let old_private_share = departing_blinded_share
             .unblind(&departing_validator_keypair)
             .unwrap();
-        let new_private_share = new_blinded_share
-            .unblind(&incoming_validator_keypair)
-            .unwrap();
+        let new_private_share =
+            new_blinded_share.unblind(&incoming_validator_keypair).unwrap();
         assert_eq!(new_private_share, old_private_share);
 
         // We check that the private share from the other participants plus the

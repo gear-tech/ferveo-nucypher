@@ -32,6 +32,7 @@ pub use key_share::{
     BlindedKeyShare, DkgPublicKey, PrivateKeyShare, ShareCommitment,
 };
 
+/// Provides BLS12-381 type aliases.
 #[cfg(feature = "bls12_381")]
 pub mod bls12_381;
 
@@ -94,9 +95,8 @@ mod tests {
         let msg = "my-msg".as_bytes().to_vec();
         let aad: &[u8] = "my-aad".as_bytes();
 
-        let DealerOutput {
-            public_key: pubkey, ..
-        } = deal::<E>(shares_num, threshold, rng);
+        let DealerOutput { public_key: pubkey, .. } =
+            deal::<E>(shares_num, threshold, rng);
 
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
@@ -131,9 +131,7 @@ mod tests {
         let aad: &[u8] = "my-aad".as_bytes();
 
         let DealerOutput {
-            public_key: pubkey,
-            private_contexts: contexts,
-            ..
+            public_key: pubkey, private_contexts: contexts, ..
         } = deal::<E>(shares_num, threshold, rng);
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
@@ -154,9 +152,7 @@ mod tests {
         let aad: &[u8] = "my-aad".as_bytes();
 
         let DealerOutput {
-            public_key: pubkey,
-            private_contexts: contexts,
-            ..
+            public_key: pubkey, private_contexts: contexts, ..
         } = deal::<E>(shares_num, threshold, &mut rng);
 
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
@@ -199,9 +195,7 @@ mod tests {
         let aad = "my-aad".as_bytes();
 
         let DealerOutput {
-            public_key: pubkey,
-            private_contexts: contexts,
-            ..
+            public_key: pubkey, private_contexts: contexts, ..
         } = deal::<E>(shares_num, threshold, &mut rng);
 
         let ciphertext = encrypt::<E, _>(&msg, aad, &pubkey, rng).unwrap();
@@ -231,9 +225,7 @@ mod tests {
         let aad: &[u8] = "my-aad".as_bytes();
 
         let DealerOutput {
-            public_key: pubkey,
-            private_contexts: contexts,
-            ..
+            public_key: pubkey, private_contexts: contexts, ..
         } = deal::<E>(shares_num, threshold, &mut rng);
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
@@ -281,9 +273,7 @@ mod tests {
         let aad: &[u8] = "my-aad".as_bytes();
 
         let DealerOutput {
-            public_key: pubkey,
-            private_contexts: contexts,
-            ..
+            public_key: pubkey, private_contexts: contexts, ..
         } = deal::<E>(shares_num, threshold, &mut rng);
 
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
