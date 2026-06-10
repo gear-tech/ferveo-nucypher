@@ -1,90 +1,90 @@
 //! This adds a few utility functions for serializing and deserializing
 //! [arkworks](http://arkworks.rs/) types that implement [CanonicalSerialize] and [CanonicalDeserialize].
-//! Adapted from [o1-labs/proof-systems](https://raw.githubusercontent.com/o1-labs/proof-systems/31c76ceae3122f0ce09cded8260960ed5cbbe3d8/utils/src/serialization.rs).
 
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use serde::{self, Deserialize, Serialize};
-use serde_with::Bytes;
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de, ser};
 
-//
-// Serialization with serde
-//
+pub mod ark_serde {
+    use core::{
+        fmt::{Formatter, Result as FmtResult},
+        marker::PhantomData,
+    };
 
-pub mod ser {
-    //! You can use this module for serialization and deserializing arkworks types with [serde].
-    //! Simply use the following attribute on your field:
-    //! `#[serde(with = "serialization::ser") attribute"]`
-
-    use serde_with::{DeserializeAs, SerializeAs};
+    use serde::de::Visitor;
 
     use super::*;
 
-    /// You can use this to serialize an arkworks type with serde and the "serialize_with" attribute.
-    /// See <https://serde.rs/field-attrs.html>
-    pub fn serialize<S>(
-        val: impl CanonicalSerialize,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
+    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        T: CanonicalSerialize,
+        S: Serializer,
     {
-        let mut bytes = vec![];
-        val.serialize_compressed(&mut bytes)
-            .map_err(serde::ser::Error::custom)?;
-
-        Bytes::serialize_as(&bytes, serializer)
+        let mut bytes = Vec::with_capacity(value.compressed_size());
+        value
+            .serialize_compressed(&mut bytes)
+            .map_err(ser::Error::custom)?;
+        serializer.serialize_bytes(&bytes)
     }
 
-    /// You can use this to deserialize an arkworks type with serde and the "deserialize_with" attribute.
-    /// See <https://serde.rs/field-attrs.html>
     pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
     where
         T: CanonicalDeserialize,
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
-        let bytes: Vec<u8> = Bytes::deserialize_as(deserializer)?;
-        T::deserialize_compressed(&mut &bytes[..])
-            .map_err(serde::de::Error::custom)
+        struct ArkVisitor<T>(PhantomData<T>);
+
+        impl<T: CanonicalDeserialize> Visitor<'_> for ArkVisitor<T> {
+            type Value = T;
+
+            fn expecting(&self, formatter: &mut Formatter<'_>) -> FmtResult {
+                formatter.write_str(
+                    "an Arkworks canonically serialized byte sequence",
+                )
+            }
+
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                T::deserialize_compressed(bytes).map_err(E::custom)
+            }
+
+            fn visit_byte_buf<E>(self, bytes: Vec<u8>) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_bytes(&bytes)
+            }
+        }
+
+        deserializer.deserialize_bytes(ArkVisitor(PhantomData))
     }
 }
 
-//
-// Serialization with [serde_with]
-//
+#[cfg(feature = "ark-serde-hex")]
+pub mod ark_serde_hex {
+    use super::*;
 
-/// You can use [SerdeAs] with [serde_with] in order to serialize and deserialize types that implement [CanonicalSerialize] and [CanonicalDeserialize],
-/// or containers of types that implement these traits (Vec, arrays, etc.)
-/// Simply add annotations like `#[serde_as(as = "serialization::SerdeAs")]`
-/// See <https://docs.rs/serde_with/1.10.0/serde_with/guide/serde_as/index.html#switching-from-serdes-with-to-serde_as>
-pub struct SerdeAs;
-
-impl<T> serde_with::SerializeAs<T> for SerdeAs
-where
-    T: CanonicalSerialize,
-{
-    fn serialize_as<S>(val: &T, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        T: CanonicalSerialize,
+        S: Serializer,
     {
-        let mut bytes = vec![];
-        val.serialize_compressed(&mut bytes)
-            .map_err(serde::ser::Error::custom)?;
-
-        Bytes::serialize_as(&bytes, serializer)
+        let mut bytes = Vec::with_capacity(value.compressed_size());
+        value
+            .serialize_compressed(&mut bytes)
+            .map_err(ser::Error::custom)?;
+        const_hex::serialize(bytes, serializer)
     }
-}
 
-impl<'de, T> serde_with::DeserializeAs<'de, T> for SerdeAs
-where
-    T: CanonicalDeserialize,
-{
-    fn deserialize_as<D>(deserializer: D) -> Result<T, D::Error>
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        T: CanonicalDeserialize,
+        D: Deserializer<'de>,
     {
-        let bytes: Vec<u8> = Bytes::deserialize_as(deserializer)?;
-        T::deserialize_compressed(&mut &bytes[..])
-            .map_err(serde::de::Error::custom)
+        let bytes: Vec<u8> = const_hex::deserialize(deserializer)?;
+        T::deserialize_compressed(&mut bytes.as_slice())
+            .map_err(de::Error::custom)
     }
 }
 
@@ -127,5 +127,54 @@ mod test {
         let bytes = test.to_bytes().unwrap();
         let test2 = Test::from_bytes(&bytes).unwrap();
         assert_eq!(test, test2);
+    }
+}
+
+#[cfg(all(test, feature = "ark-serde-hex"))]
+mod tests_ark_hex {
+
+    use std::ops::Mul;
+
+    use ark_ec::{AffineRepr, CurveGroup, pairing::Pairing};
+    use ark_ff::UniformRand;
+    use serde::{Deserialize, Serialize};
+
+    use super::ark_serde_hex;
+
+    type E = ark_bls12_381::Bls12_381;
+    type G1Affine = <E as Pairing>::G1Affine;
+    type G2Affine = <E as Pairing>::G2Affine;
+    type TargetField = <E as Pairing>::TargetField;
+
+    #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+    struct ArkSerdeFixture {
+        #[serde(with = "ark_serde_hex")]
+        g1: G1Affine,
+        #[serde(with = "ark_serde_hex")]
+        g2: G2Affine,
+        #[serde(with = "ark_serde_hex")]
+        gt: TargetField,
+    }
+
+    #[test]
+    fn ark_bls12_381_points_round_trip_through_hex_json() {
+        let rng = &mut ark_std::test_rng();
+        let g1 = G1Affine::generator()
+            .mul(<E as Pairing>::ScalarField::rand(rng))
+            .into_affine();
+        let g2 = G2Affine::generator()
+            .mul(<E as Pairing>::ScalarField::rand(rng))
+            .into_affine();
+        let gt = E::pairing(g1, g2).0;
+        let fixture = ArkSerdeFixture { g1, g2, gt };
+
+        let serialized = serde_json::to_value(&fixture).unwrap();
+        assert!(serialized["g1"].as_str().is_some());
+        assert!(serialized["g2"].as_str().is_some());
+        assert!(serialized["gt"].as_str().is_some());
+
+        let deserialized: ArkSerdeFixture =
+            serde_json::from_value(serialized).unwrap();
+        assert_eq!(deserialized, fixture);
     }
 }

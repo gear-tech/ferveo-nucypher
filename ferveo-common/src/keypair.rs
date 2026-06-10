@@ -10,10 +10,9 @@ use generic_array::{
     GenericArray,
     typenum::{U96, Unsigned},
 };
-use serde::*;
-use serde_with::serde_as;
+use serde::{Deserialize, Serialize};
 
-use crate::{Error, Result, serialization};
+use crate::{Error, Result, serialization::ark_serde};
 
 // Normally, we would use a custom trait for this, but we can't because
 // the arkworks will not let us create a blanket implementation for G1Affine
@@ -32,10 +31,9 @@ pub fn from_bytes<T: CanonicalDeserialize>(bytes: &[u8]) -> Result<T> {
     Ok(item)
 }
 
-#[serde_as]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PublicKey<E: Pairing> {
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub encryption_key: E::G2Affine,
 }
 
@@ -48,11 +46,9 @@ impl<E: Pairing> PublicKey<E> {
     pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey<E>> {
         let bytes =
             GenericArray::<u8, U96>::from_exact_iter(bytes.iter().cloned())
-                .ok_or_else(|| {
-                    Error::InvalidByteLength(
-                        Self::serialized_size(),
-                        bytes.len(),
-                    )
+                .ok_or_else(|| Error::InvalidByteLength {
+                    expected: Self::serialized_size(),
+                    actual: bytes.len(),
                 })?;
         from_bytes(&bytes).map(|encryption_key| PublicKey { encryption_key })
     }
@@ -88,10 +84,9 @@ impl<E: Pairing> std::fmt::Display for PublicKey<E> {
     }
 }
 
-#[serde_as]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Keypair<E: Pairing> {
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub decryption_key: E::ScalarField,
 }
 

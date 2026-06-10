@@ -1,9 +1,9 @@
 [package]
-name = "ferveo-nucypher-common"
+name = "ferveo-gear-common"
 version = "0.4.0"
 edition = "2024"
 license = "GPL-3.0"
-authors = ["David Nuñez <david@nucypher.com>", "Piotr Roslaniec <p.roslaniec@gmail.com>", "Heliax AG <hello@heliax.dev>"]
+authors = ["Dmitry Kuzmin"]
 description = "Common types and traits for Ferveo"
 
 [dependencies]
@@ -14,7 +14,17 @@ bincode = { workspace = true }
 generic-array = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_with = { workspace = true }
+thiserror.workspace = true
+const-hex = { workspace = true, optional = true, features = ["serde"] }
+
 
 [dev-dependencies]
 ark-bls12-381 = { workspace = true }
+serde_json.workspace = true
+ark-ff.workspace = true
+
+[features]
+default = []
+
+# Enables serialize/deserialize arkworks types with hex.
+ark-serde-hex = ["dep:const-hex"]

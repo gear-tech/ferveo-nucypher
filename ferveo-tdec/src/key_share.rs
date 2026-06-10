@@ -2,13 +2,13 @@ use std::{collections::HashMap, ops::Mul};
 
 use ark_ec::{CurveGroup, pairing::Pairing};
 use ark_ff::Field;
-use ferveo_common::Keypair;
+use ferveo_common::{Keypair, ark_serde_hex};
 use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::{
     CiphertextHeader, DecryptionSharePrecomputed, DecryptionShareSimple,
-    DomainPoint, Result, prepare_combine_simple, utils::ark_serde_hex,
+    DomainPoint, Result, prepare_combine_simple,
 };
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]

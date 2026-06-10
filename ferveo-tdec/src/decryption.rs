@@ -2,12 +2,13 @@ use std::ops::Mul;
 
 use ark_ec::{CurveGroup, PrimeGroup, pairing::Pairing};
 use ark_ff::Field;
+use ferveo_common::ark_serde_hex;
 use itertools::izip;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::{
     Ciphertext, CiphertextHeader, PrivateKeyShare,
-    PublicDecryptionContextSimple, Result, utils::ark_serde_hex,
+    PublicDecryptionContextSimple, Result,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]

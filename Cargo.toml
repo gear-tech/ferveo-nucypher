@@ -7,6 +7,8 @@ members = ["ferveo", "ferveo-common", "ferveo-tdec", "subproductdomain"]
 [workspace.dependencies]
 # workspace packages
 subproductdomain = { path = "subproductdomain", package = "subproductdomain-nucypher" }
+ferveo-common = { path = "ferveo-common", package = "ferveo-gear-common" }
+ferveo-tdec = { path = "ferveo-tdec", package = "ferveo-gear-tdec" }
 
 anyhow = "1.0.47"
 ark-bls12-381 = "0.6"
@@ -30,8 +32,7 @@ rand = "0.8"
 rand_core = "0.6.4"
 rand_old = { package = "rand", version = "0.7" }             # TODO: Used by benchmarks/pairing.rs, update to rand = "0.8" when possible
 serde = "1.0"
-serde_bytes = "0.11.9"
-serde_with = "2.2.0"
+serde_json = "1"
 sha2 = "0.10.6"
 test-case = "3.3.1"
 thiserror = "1.0"

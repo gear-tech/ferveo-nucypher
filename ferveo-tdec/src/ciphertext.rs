@@ -7,13 +7,14 @@ use chacha20poly1305::{
     ChaCha20Poly1305,
     aead::{Aead, KeyInit, Payload, generic_array::GenericArray},
 };
+use ferveo_common::ark_serde_hex;
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, digest::Digest};
 use zeroize::{ZeroizeOnDrop, Zeroizing};
 
 use crate::{
     Codec, DkgPublicKey, Error, PrivateKeyShare, Result, SharedSecret,
-    htp_bls12381_g2, utils::ark_serde_hex,
+    htp_bls12381_g2,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]

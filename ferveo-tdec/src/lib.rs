@@ -9,7 +9,6 @@ mod dealer;
 mod decryption;
 mod hash_to_curve;
 mod key_share;
-mod utils;
 
 pub use ciphertext::{
     Ciphertext, CiphertextHeader, Raw, RawCiphertext, decrypt, decrypt_raw,

@@ -18,7 +18,6 @@ use generic_array::{
 };
 use rand::{RngCore, thread_rng};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use serde_with::serde_as;
 
 pub use crate::EthereumAddress;
 use crate::{
@@ -153,9 +152,8 @@ impl DkgPublicKey {
 }
 
 // TODO: Consider if FieldPoint should be removed - #197
-#[serde_as]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct FieldPoint(#[serde_as(as = "serialization::SerdeAs")] pub Fr);
+pub struct FieldPoint(#[serde(with = "serialization::ark_serde")] pub Fr);
 
 impl FieldPoint {
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
@@ -379,11 +377,10 @@ impl AggregatedTranscript {
     }
 }
 
-#[serde_as]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecryptionShareSimple {
     share: tdec_bls12_381::DecryptionShareSimple,
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "serialization::ark_serde")]
     domain_point: DomainPoint<E>,
 }
 

@@ -6,7 +6,7 @@ use ark_poly::{
     DenseUVPolynomial, EvaluationDomain, Polynomial,
     polynomial::univariate::DensePolynomial,
 };
-use ferveo_common::{Keypair, PublicKey, serialization};
+use ferveo_common::{Keypair, PublicKey, ark_serde};
 use ferveo_tdec::{
     BlindedKeyShare, CiphertextHeader, DecryptionSharePrecomputed,
     DecryptionShareSimple, DomainPoint, ShareCommitment,
@@ -14,7 +14,6 @@ use ferveo_tdec::{
 use itertools::Itertools;
 use rand::RngCore;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use serde_with::serde_as;
 use subproductdomain::fast_multiexp;
 use zeroize::{self, Zeroize, ZeroizeOnDrop};
 
@@ -74,19 +73,18 @@ impl<E: Pairing> ZeroizeOnDrop for SecretPolynomial<E> {}
 
 /// Each validator posts a transcript to the chain. Once enough (threshold) validators have done,
 /// these will be aggregated into a final key
-#[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct PubliclyVerifiableSS<E: Pairing, T = Unaggregated> {
     /// Used in Feldman commitment to the VSS polynomial, F_i = g^{a_i}, where a_i are poly coefficients
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub coeffs: Vec<E::G1Affine>,
 
     /// The blinded shares to be dealt to each validator, Y_i
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub shares: Vec<E::G2Affine>,
 
     /// Proof of Knowledge
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub sigma: E::G2Affine,
 
     /// Marker struct to distinguish between aggregated and

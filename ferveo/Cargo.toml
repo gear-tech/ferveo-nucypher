@@ -8,12 +8,21 @@ readme = "README.md"
 description = "An implementation of a DKG protocol for threshold decryption."
 keywords = ["DKG"]
 categories = ["cryptography"]
-authors = ["David Nuñez <david@nucypher.com>", "Piotr Roslaniec <p.roslaniec@gmail.com>", "Heliax AG <hello@heliax.dev>"]
+authors = [
+    "David Nuñez <david@nucypher.com>",
+    "Piotr Roslaniec <p.roslaniec@gmail.com>",
+    "Heliax AG <hello@heliax.dev>",
+]
 
 [lib]
 bench = false
 
 [dependencies]
+
+# Workspace dependencies
+ferveo-common = { workspace = true }
+ferveo-tdec = { workspace = true, features = ["bls12_381"] }
+
 ark-bls12-381 = { workspace = true }
 ark-ec = { workspace = true }
 ark-ff = { workspace = true }
@@ -21,14 +30,11 @@ ark-poly = { workspace = true }
 ark-serialize = { workspace = true }
 ark-std = { workspace = true }
 bincode = { workspace = true }
-ferveo-common = { package = "ferveo-nucypher-common", path = "../ferveo-common", version = "^0.4.0" }
-ferveo-tdec = { package = "ferveo-gear-tdec", path = "../ferveo-tdec", features = ["bls12_381"], version = "^0.4.0" }
 hex = { workspace = true }
 itertools = { workspace = true }
 rand = { workspace = true }
 rand_core = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_with = { workspace = true }
 subproductdomain = { package = "subproductdomain-nucypher", path = "../subproductdomain", version = "^0.4.0" }
 thiserror = { workspace = true }
 zeroize = { workspace = true, features = ["derive"] }
@@ -58,5 +64,5 @@ harness = false
 
 [package.metadata.cargo-machete]
 ignored = [
-    "rand_old" # used by benchmarks/pairing.rs
+    "rand_old", # used by benchmarks/pairing.rs
 ]

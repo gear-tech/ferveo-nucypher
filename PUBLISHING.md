@@ -18,7 +18,7 @@ Update the version in the `Cargo.toml` for the relevant package(s) you want to r
 We're currently not releasing Python and WASM bindings, we're only releasing the Rust crate.
 
 You can either specify all of the packages in the workspace, or just the ones you want to release. The full list is:
-- `ferveo-nucypher-common`
+- `ferveo-gear-common`
 - `subproductdomain-nucypher`
 - `ferveo-gear-tdec`
 - `ferveo-nucypher`
