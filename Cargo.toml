@@ -10,9 +10,9 @@ authors = ["Dmitry Kuzmin"]
 
 [workspace.dependencies]
 # workspace packages
-subproductdomain = { path = "subproductdomain", package = "subproductdomain-gear" }
-ferveo-common = { path = "ferveo-common", package = "ferveo-gear-common" }
-ferveo-tdec = { path = "ferveo-tdec", package = "ferveo-gear-tdec" }
+subproductdomain = { path = "subproductdomain", package = "subproductdomain-gear", version = "0.5.0" }
+ferveo-common = { path = "ferveo-common", package = "ferveo-gear-common", version = "0.5.0" }
+ferveo-tdec = { path = "ferveo-tdec", package = "ferveo-gear-tdec", version = "0.5.0" }
 
 anyhow = "1.0.47"
 ark-bls12-381 = "0.6"
