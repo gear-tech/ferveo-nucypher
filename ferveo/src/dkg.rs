@@ -44,11 +44,7 @@ impl DkgParams {
                 security_threshold,
             ));
         }
-        Ok(Self {
-            tau,
-            security_threshold,
-            shares_num,
-        })
+        Ok(Self { tau, security_threshold, shares_num })
     }
 
     pub fn tau(&self) -> u32 {
@@ -113,12 +109,7 @@ impl<E: Pairing> PubliclyVerifiableDkg<E> {
             return Err(Error::DealerNotInValidatorSet(me.address.clone()));
         }
 
-        Ok(Self {
-            dkg_params: *dkg_params,
-            domain,
-            me: me.clone(),
-            validators,
-        })
+        Ok(Self { dkg_params: *dkg_params, domain, me: me.clone(), validators })
     }
 
     /// Get the validator with for the given public key
@@ -251,9 +242,8 @@ impl<E: Pairing> PubliclyVerifiableDkg<E> {
             .get(&handover_slot_index)
             .ok_or(Error::InvalidShareIndex(handover_slot_index))?;
 
-        let departing_blinded_share = aggregate
-            .aggregate
-            .get_share_for_validator(departing_validator)?;
+        let departing_blinded_share =
+            aggregate.aggregate.get_share_for_validator(departing_validator)?;
 
         Ok(refresh::HandoverTranscript::<E>::new(
             handover_slot_index,

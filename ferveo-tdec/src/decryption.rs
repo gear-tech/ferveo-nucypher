@@ -2,12 +2,13 @@ use std::ops::Mul;
 
 use ark_ec::{CurveGroup, PrimeGroup, pairing::Pairing};
 use ark_ff::Field;
+use ferveo_common::ark_serde_hex;
 use itertools::izip;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::{
     Ciphertext, CiphertextHeader, PrivateKeyShare,
-    PublicDecryptionContextSimple, Result, utils::ark_serde_hex,
+    PublicDecryptionContextSimple, Result,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -105,10 +106,7 @@ impl<E: Pairing> DecryptionShareSimple<E> {
             ciphertext_header,
         )?;
 
-        Ok(Self {
-            decryption_share,
-            validator_checksum,
-        })
+        Ok(Self { decryption_share, validator_checksum })
     }
     /// Verify that the decryption share is valid.
     pub fn verify<T>(

@@ -29,10 +29,7 @@ pub fn create_or_truncate_output_file() -> std::io::Result<()> {
         .open(file_path)?;
     file.sync_all()?;
 
-    writeln!(
-        file,
-        "|n of elements|type of element|serialized size in bytes|",
-    )?;
+    writeln!(file, "|n of elements|type of element|serialized size in bytes|",)?;
     writeln!(file, "|---|---|---|")
 }
 

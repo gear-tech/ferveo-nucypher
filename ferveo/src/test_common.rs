@@ -77,11 +77,8 @@ pub fn setup_dkg(my_validator_index: usize) -> TestSetup {
     )
 }
 
-pub type DealtTestSetup = (
-    PubliclyVerifiableDkg<E>,
-    Vec<Keypair<E>>,
-    Vec<ValidatorMessage<E>>,
-);
+pub type DealtTestSetup =
+    (PubliclyVerifiableDkg<E>, Vec<Keypair<E>>, Vec<ValidatorMessage<E>>);
 
 /// Set up a dkg with enough pvss transcripts to meet the threshold
 ///

@@ -2,11 +2,10 @@
 
 use ark_ec::pairing::Pairing;
 use ark_ff::{Field, One, PrimeField, Zero};
+use ferveo_common::ark_serde_hex;
 use itertools::izip;
 use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, ZeroizeOnDrop};
-
-use crate::utils::ark_serde_hex;
 
 #[derive(
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,

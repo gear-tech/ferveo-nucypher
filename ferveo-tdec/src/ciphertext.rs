@@ -7,13 +7,14 @@ use chacha20poly1305::{
     ChaCha20Poly1305,
     aead::{Aead, KeyInit, Payload, generic_array::GenericArray},
 };
+use ferveo_common::ark_serde_hex;
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, digest::Digest};
 use zeroize::{ZeroizeOnDrop, Zeroizing};
 
 use crate::{
     Codec, DkgPublicKey, Error, PrivateKeyShare, Result, SharedSecret,
-    htp_bls12381_g2, utils::ark_serde_hex,
+    htp_bls12381_g2,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
@@ -97,12 +98,7 @@ impl<E: Pairing, T> parity_scale_codec::Decode for Ciphertext<E, T> {
 
         let ciphertext =
             <Vec<u8> as parity_scale_codec::Decode>::decode(input)?;
-        Ok(Self {
-            commitment,
-            auth_tag,
-            ciphertext,
-            _type: PhantomData,
-        })
+        Ok(Self { commitment, auth_tag, ciphertext, _type: PhantomData })
     }
 }
 
@@ -310,10 +306,7 @@ fn decrypt_with_shared_secret<E: Pairing, T>(
     ciphertext.check(aad)?;
     let nonce = Nonce::from_commitment::<E>(ciphertext.commitment)?;
     let ctxt = ciphertext.ciphertext.to_vec();
-    let payload = Payload {
-        msg: ctxt.as_ref(),
-        aad,
-    };
+    let payload = Payload { msg: ctxt.as_ref(), aad };
     let plaintext = shared_secret_to_chacha(shared_secret)?
         .decrypt(&nonce.0, payload)
         .map_err(|_| Error::CiphertextVerificationFailed)?
@@ -351,9 +344,7 @@ impl Nonce {
     ) -> Result<Self> {
         let commitment_bytes = serialize_g1::<E>(&commitment);
         let commitment_hash = sha256(&commitment_bytes);
-        Ok(Self(*chacha20poly1305::Nonce::from_slice(
-            &commitment_hash[..12],
-        )))
+        Ok(Self(*chacha20poly1305::Nonce::from_slice(&commitment_hash[..12])))
     }
 }
 
@@ -393,11 +384,8 @@ mod tests {
         let msg = "my-msg".as_bytes().to_vec();
         let aad: &[u8] = "my-aad".as_bytes();
 
-        let DealerOutput {
-            public_key: pubkey,
-            private_key: privkey,
-            ..
-        } = deal::<E>(shares_num, threshold, rng);
+        let DealerOutput { public_key: pubkey, private_key: privkey, .. } =
+            deal::<E>(shares_num, threshold, rng);
 
         let ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
@@ -418,9 +406,8 @@ mod tests {
         let threshold = shares_num * 2 / 3;
         let msg = "my-msg".as_bytes().to_vec();
         let aad: &[u8] = "my-aad".as_bytes();
-        let DealerOutput {
-            public_key: pubkey, ..
-        } = deal::<E>(shares_num, threshold, rng);
+        let DealerOutput { public_key: pubkey, .. } =
+            deal::<E>(shares_num, threshold, rng);
         let mut ciphertext = encrypt_raw::<E>(&msg, aad, &pubkey, rng).unwrap();
 
         // So far, the ciphertext is valid

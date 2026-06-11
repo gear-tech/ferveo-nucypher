@@ -1,35 +1,17 @@
 pub mod keypair;
 pub mod serialization;
 
-use std::{fmt, fmt::Formatter};
-
 pub use keypair::*;
 pub use serialization::*;
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    InvalidByteLength(usize, usize),
+    #[error("Invalid byte length: expected {expected}, actual {actual}")]
+    InvalidByteLength { expected: usize, actual: usize },
+    #[error("Serialization error: {0}")]
     SerializationError(ark_serialize::SerializationError),
+    #[error("Invalid seed length: {0}")]
     InvalidSeedLength(usize),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::InvalidByteLength(expected, actual) => {
-                write!(
-                    f,
-                    "Invalid byte length: expected {expected}, actual {actual}"
-                )
-            }
-            Error::SerializationError(e) => {
-                write!(f, "Serialization error: {e}")
-            }
-            Error::InvalidSeedLength(len) => {
-                write!(f, "Invalid seed length: {len}")
-            }
-        }
-    }
 }
 
 type Result<T> = std::result::Result<T, Error>;

@@ -6,7 +6,7 @@ use ark_poly::{
     DenseUVPolynomial, EvaluationDomain, Polynomial,
     polynomial::univariate::DensePolynomial,
 };
-use ferveo_common::{Keypair, PublicKey, serialization};
+use ferveo_common::{Keypair, PublicKey, ark_serde};
 use ferveo_tdec::{
     BlindedKeyShare, CiphertextHeader, DecryptionSharePrecomputed,
     DecryptionShareSimple, DomainPoint, ShareCommitment,
@@ -14,7 +14,6 @@ use ferveo_tdec::{
 use itertools::Itertools;
 use rand::RngCore;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use serde_with::serde_as;
 use subproductdomain::fast_multiexp;
 use zeroize::{self, Zeroize, ZeroizeOnDrop};
 
@@ -74,19 +73,18 @@ impl<E: Pairing> ZeroizeOnDrop for SecretPolynomial<E> {}
 
 /// Each validator posts a transcript to the chain. Once enough (threshold) validators have done,
 /// these will be aggregated into a final key
-#[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct PubliclyVerifiableSS<E: Pairing, T = Unaggregated> {
     /// Used in Feldman commitment to the VSS polynomial, F_i = g^{a_i}, where a_i are poly coefficients
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub coeffs: Vec<E::G1Affine>,
 
     /// The blinded shares to be dealt to each validator, Y_i
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub shares: Vec<E::G2Affine>,
 
     /// Proof of Knowledge
-    #[serde_as(as = "serialization::SerdeAs")]
+    #[serde(with = "ark_serde")]
     pub sigma: E::G2Affine,
 
     /// Marker struct to distinguish between aggregated and
@@ -154,12 +152,7 @@ impl<E: Pairing, T> PubliclyVerifiableSS<E, T> {
         // TODO: Cross check proof of knowledge check with the whitepaper; this check proves that there is a relationship between the secret and the pvss transcript - #201
         // Sigma is a proof of knowledge of the secret, sigma = h^s
         let sigma = E::G2Affine::generator().mul(*s).into(); // TODO: Use hash-to-curve here? This can break compatibility - #195
-        let vss = Self {
-            coeffs,
-            shares,
-            sigma,
-            phantom: Default::default(),
-        };
+        let vss = Self { coeffs, shares, sigma, phantom: Default::default() };
         Ok(vss)
     }
 
@@ -524,10 +517,7 @@ impl<E: Pairing> AggregatedTranscript<E> {
         aggregate: PubliclyVerifiableSS<E, Aggregated>,
     ) -> Result<Self> {
         let public_key = ferveo_tdec::DkgPublicKey::<E>(aggregate.coeffs[0]);
-        Ok(AggregatedTranscript {
-            aggregate,
-            public_key,
-        })
+        Ok(AggregatedTranscript { aggregate, public_key })
     }
 }
 
