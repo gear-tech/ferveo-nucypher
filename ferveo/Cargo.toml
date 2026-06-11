@@ -1,18 +1,14 @@
 [package]
 name = "ferveo-nucypher"
-version = "0.4.0"
-edition = "2024"
-license = "GPL-3.0"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 repository = "https://github.com/nucypher/ferveo"
 readme = "README.md"
 description = "An implementation of a DKG protocol for threshold decryption."
 keywords = ["DKG"]
 categories = ["cryptography"]
-authors = [
-    "David Nuñez <david@nucypher.com>",
-    "Piotr Roslaniec <p.roslaniec@gmail.com>",
-    "Heliax AG <hello@heliax.dev>",
-]
+authors.workspace = true
 
 [lib]
 bench = false
@@ -35,7 +31,7 @@ itertools = { workspace = true }
 rand = { workspace = true }
 rand_core = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-subproductdomain = { package = "subproductdomain-nucypher", path = "../subproductdomain", version = "^0.4.0" }
+subproductdomain.workspace = true
 thiserror = { workspace = true }
 zeroize = { workspace = true, features = ["derive"] }
 generic-array = { workspace = true }

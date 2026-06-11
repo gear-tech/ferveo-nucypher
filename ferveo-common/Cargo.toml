@@ -1,9 +1,9 @@
 [package]
 name = "ferveo-gear-common"
-version = "0.4.0"
-edition = "2024"
-license = "GPL-3.0"
-authors = ["Dmitry Kuzmin"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
 description = "Common types and traits for Ferveo"
 
 [dependencies]

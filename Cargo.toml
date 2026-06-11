@@ -2,9 +2,15 @@
 resolver = "3"
 members = ["ferveo", "ferveo-common", "ferveo-tdec", "subproductdomain"]
 
+[workspace.package]
+version = "0.4.0"
+edition = "2024"
+license = "GPL-3.0"
+authors = ["Dmitry Kuzmin"]
+
 [workspace.dependencies]
 # workspace packages
-subproductdomain = { path = "subproductdomain", package = "subproductdomain-nucypher" }
+subproductdomain = { path = "subproductdomain", package = "subproductdomain-gear" }
 ferveo-common = { path = "ferveo-common", package = "ferveo-gear-common" }
 ferveo-tdec = { path = "ferveo-tdec", package = "ferveo-gear-tdec" }
 
