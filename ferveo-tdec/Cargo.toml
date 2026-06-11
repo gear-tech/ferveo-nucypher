@@ -14,7 +14,7 @@ bench = false
 [dependencies]
 # Workspace dependencies
 subproductdomain.workspace = true
-ferveo-common = { workspace = true, features = ["ark-serde-hex"] }
+ferveo-common.workspace = true
 
 # Arkworks ecosystem dependencies
 ark-bls12-381 = { workspace = true }
@@ -32,12 +32,12 @@ serde = { workspace = true, features = ["derive"] }
 sha2 = { workspace = true }
 thiserror = { workspace = true }
 zeroize = { workspace = true, features = ["derive"] }
-const-hex = { workspace = true, features = ["serde"] }
 
 # Optional dependencies
 parity-scale-codec = { workspace = true, optional = true, features = [
     "derive",
 ] }
+const-hex = { workspace = true, optional = true, features = ["serde"] }
 
 [dev-dependencies]
 criterion = { workspace = true, features = ["html_reports"] }
@@ -60,5 +60,12 @@ harness = false
 
 [features]
 default = ["bls12_381", "parity-codec"]
+
+# Enables support BLS12-381 type aliases.
 bls12_381 = []
+
+# Enables encode/decode for Ciphertext using parity-scale-codec
 parity-codec = ["dep:parity-scale-codec"]
+
+# Enables hex serialize/deserialize for arkworks types.
+serde-hex = ["ferveo-common/ark-serde-hex", "dep:const-hex"]

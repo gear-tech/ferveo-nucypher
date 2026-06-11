@@ -5,6 +5,7 @@ use crate::{
     DecryptionShareSimple, PrivateKeyShare, Result, ShareCommitment,
     prepare_combine_simple,
 };
+use ferveo_common::serialization;
 
 /// Public metadata for one participant in the simple threshold decryption
 /// scheme.
@@ -12,12 +13,13 @@ use crate::{
 /// These values can be distributed to clients or aggregators. They identify
 /// the participant's point in the secret-sharing domain and provide the public
 /// material needed to verify and combine decryption shares.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct PublicDecryptionContextSimple<E: Pairing> {
     /// Participant's evaluation point in the secret-sharing domain.
     ///
     /// This value is used to compute the Lagrange coefficient for this
     /// participant when combining threshold decryption shares.
+    #[serde(with = "serialization::ark_serde_configured")]
     pub domain: E::ScalarField,
     /// Public commitment to the participant's private key share.
     ///

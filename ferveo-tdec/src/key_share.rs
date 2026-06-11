@@ -2,7 +2,7 @@ use std::{collections::HashMap, ops::Mul};
 
 use ark_ec::{CurveGroup, pairing::Pairing};
 use ark_ff::Field;
-use ferveo_common::{Keypair, ark_serde_hex};
+use ferveo_common::{Keypair, serialization};
 use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -13,20 +13,22 @@ use crate::{
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DkgPublicKey<E: Pairing>(
-    #[serde(with = "ark_serde_hex")] pub E::G1Affine,
+    #[serde(with = "serialization::ark_serde_configured")] pub E::G1Affine,
 );
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ShareCommitment<E: Pairing>(
-    #[serde(with = "ark_serde_hex")] pub E::G1Affine, // A_{i, \omega_i}
+    #[serde(with = "serialization::ark_serde_configured")] pub E::G1Affine, // A_{i, \omega_i}
 );
 
 // TODO: Improve by adding share commitment here
 // TODO: Is this a test utility perhaps?
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct BlindedKeyShare<E: Pairing> {
+    #[serde(with = "serialization::ark_serde_configured")]
     pub validator_public_key: E::G2Affine, // [b] H
-    pub blinded_key_share: E::G2Affine,    // [b] Z_{i, \omega_i}
+    #[serde(with = "serialization::ark_serde_configured")]
+    pub blinded_key_share: E::G2Affine, // [b] Z_{i, \omega_i}
 }
 
 impl<E: Pairing> BlindedKeyShare<E> {
@@ -116,5 +118,5 @@ impl<E: Pairing> BlindedKeyShare<E> {
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
 )]
 pub struct PrivateKeyShare<E: Pairing>(
-    #[serde(with = "ark_serde_hex")] pub E::G2Affine,
+    #[serde(with = "serialization::ark_serde_configured")] pub E::G2Affine,
 );

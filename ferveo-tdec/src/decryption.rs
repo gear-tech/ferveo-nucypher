@@ -2,7 +2,7 @@ use std::ops::Mul;
 
 use ark_ec::{CurveGroup, PrimeGroup, pairing::Pairing};
 use ark_ff::Field;
-use ferveo_common::ark_serde_hex;
+use ferveo_common::serialization;
 use itertools::izip;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
@@ -13,7 +13,7 @@ use crate::{
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct ValidatorShareChecksum<E: Pairing> {
-    #[serde(with = "ark_serde_hex")]
+    #[serde(with = "serialization::ark_serde_configured")]
     pub checksum: E::G1Affine,
 }
 
@@ -64,7 +64,7 @@ impl<E: Pairing> ValidatorShareChecksum<E> {
 /// client side int order to be combined.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecryptionShareSimple<E: Pairing> {
-    #[serde(with = "ark_serde_hex")]
+    #[serde(with = "serialization::ark_serde_configured")]
     pub decryption_share: E::TargetField,
     #[serde(bound(
         serialize = "ValidatorShareChecksum<E>: Serialize",
@@ -132,7 +132,7 @@ impl<E: Pairing> DecryptionShareSimple<E> {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecryptionSharePrecomputed<E: Pairing> {
     pub decrypter_index: usize,
-    #[serde(with = "ark_serde_hex")]
+    #[serde(with = "serialization::ark_serde_configured")]
     pub decryption_share: E::TargetField,
     #[serde(bound(
         serialize = "ValidatorShareChecksum<E>: Serialize",

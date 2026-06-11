@@ -7,7 +7,7 @@ use ark_poly::{
     univariate::DensePolynomial,
 };
 use ark_std::{One, UniformRand};
-use ferveo_common::{Keypair, PublicKey, ark_serde};
+use ferveo_common::{Keypair, PublicKey, ark_serde_configured};
 use ferveo_tdec::{
     BlindedKeyShare, CiphertextHeader, DecryptionSharePrecomputed,
     DecryptionShareSimple, DomainPoint, ShareCommitment,
@@ -160,10 +160,10 @@ impl<E: Pairing> UpdatableBlindedKeyShare<E> {
     Serialize, Deserialize, Debug, Clone, PartialEq, Eq, ZeroizeOnDrop,
 )]
 pub struct ShareUpdate<E: Pairing> {
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_configured")]
     pub update: E::G2Affine,
 
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_configured")]
     pub commitment: E::G1Affine,
 }
 
@@ -299,16 +299,16 @@ impl<E: Pairing> UpdateTranscript<E> {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HandoverTranscript<E: Pairing> {
     pub share_index: u32,
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_configured")]
     pub double_blind_share: E::G2,
 
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_configured")]
     pub commitment_to_share: E::G2,
 
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_configured")]
     pub commitment_to_g1: E::G1,
 
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_configured")]
     pub commitment_to_g2: E::G2,
 
     #[serde(bound(

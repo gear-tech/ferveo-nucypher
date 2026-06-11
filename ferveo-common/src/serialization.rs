@@ -4,13 +4,13 @@
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de, ser};
 
-pub mod ark_serde {
+pub mod ark_serde_default {
     use core::{
         fmt::{Formatter, Result as FmtResult},
         marker::PhantomData,
     };
 
-    use serde::de::Visitor;
+    use serde::de::{SeqAccess, Visitor};
 
     use super::*;
 
@@ -31,7 +31,7 @@ pub mod ark_serde {
     {
         struct ArkVisitor<T>(PhantomData<T>);
 
-        impl<T: CanonicalDeserialize> Visitor<'_> for ArkVisitor<T> {
+        impl<'de, T: CanonicalDeserialize> Visitor<'de> for ArkVisitor<T> {
             type Value = T;
 
             fn expecting(&self, formatter: &mut Formatter<'_>) -> FmtResult {
@@ -51,6 +51,19 @@ pub mod ark_serde {
             where
                 E: de::Error,
             {
+                self.visit_bytes(&bytes)
+            }
+
+            // Some serializers, including serde_json, encode bytes as a sequence.
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut bytes =
+                    Vec::with_capacity(seq.size_hint().unwrap_or_default());
+                while let Some(byte) = seq.next_element()? {
+                    bytes.push(byte);
+                }
                 self.visit_bytes(&bytes)
             }
         }
@@ -83,6 +96,14 @@ pub mod ark_serde_hex {
             .map_err(de::Error::custom)
     }
 }
+
+/// Arkworks serde format selected by the `ark-serde-hex` feature.
+#[cfg(feature = "ark-serde-hex")]
+pub use ark_serde_hex as ark_serde_configured;
+
+/// Arkworks serde default format.
+#[cfg(not(feature = "ark-serde-hex"))]
+pub use ark_serde_default as ark_serde_configured;
 
 // TODO: Trait aliases are experimental
 // trait ByteSerializable = ToBytes + FromBytes;
