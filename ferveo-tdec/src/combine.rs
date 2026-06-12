@@ -2,7 +2,7 @@
 
 use ark_ec::pairing::Pairing;
 use ark_ff::{Field, One, PrimeField, Zero};
-use ferveo_common::ark_serde_hex;
+use ferveo_common::serialization;
 use itertools::izip;
 use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -10,8 +10,10 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 #[derive(
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
 )]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct SharedSecret<E: Pairing>(
-    #[serde(with = "ark_serde_hex")] pub(crate) E::TargetField,
+    #[serde(with = "serialization::ark_serde_configured")]
+    pub(crate)  E::TargetField,
 );
 
 use crate::{DecryptionSharePrecomputed, DecryptionShareSimple};

@@ -7,7 +7,7 @@ use chacha20poly1305::{
     ChaCha20Poly1305,
     aead::{Aead, KeyInit, Payload, generic_array::GenericArray},
 };
-use ferveo_common::ark_serde_hex;
+use ferveo_common::serialization;
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, digest::Digest};
 use zeroize::{ZeroizeOnDrop, Zeroizing};
@@ -18,16 +18,17 @@ use crate::{
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct Ciphertext<E: Pairing, T = Raw> {
     // U
-    #[serde(with = "ark_serde_hex")]
+    #[serde(with = "serialization::ark_serde_configured")]
     pub commitment: E::G1Affine,
     // W
-    #[serde(with = "ark_serde_hex")]
+    #[serde(with = "serialization::ark_serde_configured")]
     pub auth_tag: E::G2Affine,
     /// The ciphertext itself.
     /// Created using [chacha20poly1305::ChaCha20Poly1305::encrypt].
-    #[serde(with = "const_hex")]
+    #[cfg_attr(feature = "serde-hex", serde(with = "const_hex"))]
     pub ciphertext: Vec<u8>,
     /// Inner type the ciphertext bind to.
     #[serde(skip)]
@@ -129,10 +130,11 @@ impl<E: Pairing, T> Ciphertext<E, T> {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct CiphertextHeader<E: Pairing> {
-    #[serde(with = "ark_serde_hex")]
+    #[serde(with = "serialization::ark_serde_configured")]
     pub commitment: E::G1Affine,
-    #[serde(with = "ark_serde_hex")]
+    #[serde(with = "serialization::ark_serde_configured")]
     pub auth_tag: E::G2Affine,
     pub ciphertext_hash: [u8; 32],
 }

@@ -1,10 +1,12 @@
 use ark_ec::pairing::Pairing;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     BlindedKeyShare, CiphertextHeader, DecryptionSharePrecomputed,
     DecryptionShareSimple, PrivateKeyShare, Result, ShareCommitment,
     prepare_combine_simple,
 };
+use ferveo_common::serialization;
 
 /// Public metadata for one participant in the simple threshold decryption
 /// scheme.
@@ -12,12 +14,14 @@ use crate::{
 /// These values can be distributed to clients or aggregators. They identify
 /// the participant's point in the secret-sharing domain and provide the public
 /// material needed to verify and combine decryption shares.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct PublicDecryptionContextSimple<E: Pairing> {
     /// Participant's evaluation point in the secret-sharing domain.
     ///
     /// This value is used to compute the Lagrange coefficient for this
     /// participant when combining threshold decryption shares.
+    #[serde(with = "serialization::ark_serde_configured")]
     pub domain: E::ScalarField,
     /// Public commitment to the participant's private key share.
     ///
@@ -41,7 +45,8 @@ pub struct PublicDecryptionContextSimple<E: Pairing> {
 /// participant's validator decryption key, secret key share, and a copy of
 /// the public participant contexts needed to compute Lagrange coefficients
 /// for precomputed shares.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct PrivateDecryptionContextSimple<E: Pairing> {
     /// Participant's index in the public context list.
     pub index: usize,
@@ -49,6 +54,7 @@ pub struct PrivateDecryptionContextSimple<E: Pairing> {
     ///
     /// This is also used when creating the checksum attached to a decryption
     /// share.
+    #[serde(with = "serialization::ark_serde_configured")]
     pub validator_decryption_key: E::ScalarField,
     /// Participant's unblinded private key share.
     ///
