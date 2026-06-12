@@ -18,6 +18,7 @@ use crate::{
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct Ciphertext<E: Pairing, T = Raw> {
     // U
     #[serde(with = "serialization::ark_serde_configured")]
@@ -129,6 +130,7 @@ impl<E: Pairing, T> Ciphertext<E, T> {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct CiphertextHeader<E: Pairing> {
     #[serde(with = "serialization::ark_serde_configured")]
     pub commitment: E::G1Affine,

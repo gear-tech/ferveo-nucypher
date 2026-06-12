@@ -12,6 +12,7 @@ use crate::{
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct ValidatorShareChecksum<E: Pairing> {
     #[serde(with = "serialization::ark_serde_configured")]
     pub checksum: E::G1Affine,
@@ -63,6 +64,7 @@ impl<E: Pairing> ValidatorShareChecksum<E> {
 /// In this variant, the decryption share require additional computation on the
 /// client side int order to be combined.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct DecryptionShareSimple<E: Pairing> {
     #[serde(with = "serialization::ark_serde_configured")]
     pub decryption_share: E::TargetField,
@@ -130,6 +132,7 @@ impl<E: Pairing> DecryptionShareSimple<E> {
 /// The downside is that the threshold of decryption shares required to decrypt
 /// is equal to the number of private key shares in the scheme.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct DecryptionSharePrecomputed<E: Pairing> {
     pub decrypter_index: usize,
     #[serde(with = "serialization::ark_serde_configured")]

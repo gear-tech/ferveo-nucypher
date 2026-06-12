@@ -12,11 +12,13 @@ use crate::{
 };
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct DkgPublicKey<E: Pairing>(
     #[serde(with = "serialization::ark_serde_configured")] pub E::G1Affine,
 );
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct ShareCommitment<E: Pairing>(
     #[serde(with = "serialization::ark_serde_configured")] pub E::G1Affine, // A_{i, \omega_i}
 );
@@ -24,6 +26,7 @@ pub struct ShareCommitment<E: Pairing>(
 // TODO: Improve by adding share commitment here
 // TODO: Is this a test utility perhaps?
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct BlindedKeyShare<E: Pairing> {
     #[serde(with = "serialization::ark_serde_configured")]
     pub validator_public_key: E::G2Affine, // [b] H
@@ -117,6 +120,7 @@ impl<E: Pairing> BlindedKeyShare<E> {
 #[derive(
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
 )]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct PrivateKeyShare<E: Pairing>(
     #[serde(with = "serialization::ark_serde_configured")] pub E::G2Affine,
 );

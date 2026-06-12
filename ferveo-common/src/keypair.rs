@@ -32,6 +32,7 @@ pub fn from_bytes<T: CanonicalDeserialize>(bytes: &[u8]) -> Result<T> {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct PublicKey<E: Pairing> {
     #[serde(with = "ark_serde_configured")]
     pub encryption_key: E::G2Affine,
@@ -85,6 +86,7 @@ impl<E: Pairing> std::fmt::Display for PublicKey<E> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct Keypair<E: Pairing> {
     #[serde(with = "ark_serde_configured")]
     pub decryption_key: E::ScalarField,

@@ -10,6 +10,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 #[derive(
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
 )]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct SharedSecret<E: Pairing>(
     #[serde(with = "serialization::ark_serde_configured")]
     pub(crate)  E::TargetField,
