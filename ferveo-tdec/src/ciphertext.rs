@@ -35,7 +35,6 @@ pub struct Ciphertext<E: Pairing, T = Raw> {
     pub _type: PhantomData<T>,
 }
 
-#[inline]
 fn serialize_point<P: CanonicalSerialize>(point: &P) -> Vec<u8> {
     let mut bytes = Vec::with_capacity(point.compressed_size());
     point
@@ -44,13 +43,15 @@ fn serialize_point<P: CanonicalSerialize>(point: &P) -> Vec<u8> {
     bytes
 }
 
-#[inline]
-fn serialize_g1<E: Pairing>(point: &E::G1Affine) -> Vec<u8> {
+pub(crate) fn serialize_g1<E: Pairing>(point: &E::G1Affine) -> Vec<u8> {
     serialize_point(point)
 }
 
-#[inline]
-fn serialize_g2<E: Pairing>(point: &E::G2Affine) -> Vec<u8> {
+pub(crate) fn serialize_g2<E: Pairing>(point: &E::G2Affine) -> Vec<u8> {
+    serialize_point(point)
+}
+
+pub(crate) fn serialize_target<E: Pairing>(point: &E::TargetField) -> Vec<u8> {
     serialize_point(point)
 }
 
