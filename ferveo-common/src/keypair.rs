@@ -12,7 +12,7 @@ use generic_array::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{Error, Result, serialization::ark_serde};
+use crate::{Error, Result, serialization::ark_serde_configured};
 
 // Normally, we would use a custom trait for this, but we can't because
 // the arkworks will not let us create a blanket implementation for G1Affine
@@ -32,8 +32,9 @@ pub fn from_bytes<T: CanonicalDeserialize>(bytes: &[u8]) -> Result<T> {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct PublicKey<E: Pairing> {
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_configured")]
     pub encryption_key: E::G2Affine,
 }
 
@@ -85,8 +86,9 @@ impl<E: Pairing> std::fmt::Display for PublicKey<E> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(bound(serialize = "", deserialize = ""))]
 pub struct Keypair<E: Pairing> {
-    #[serde(with = "ark_serde")]
+    #[serde(with = "ark_serde_configured")]
     pub decryption_key: E::ScalarField,
 }
 

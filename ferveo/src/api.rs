@@ -153,7 +153,9 @@ impl DkgPublicKey {
 
 // TODO: Consider if FieldPoint should be removed - #197
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct FieldPoint(#[serde(with = "serialization::ark_serde")] pub Fr);
+pub struct FieldPoint(
+    #[serde(with = "serialization::ark_serde_configured")] pub Fr,
+);
 
 impl FieldPoint {
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
@@ -370,7 +372,7 @@ impl AggregatedTranscript {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecryptionShareSimple {
     share: tdec_bls12_381::DecryptionShareSimple,
-    #[serde(with = "serialization::ark_serde")]
+    #[serde(with = "serialization::ark_serde_configured")]
     domain_point: DomainPoint<E>,
 }
 
