@@ -42,6 +42,11 @@ pub mod rand_utils {
     pub use rand::Rng;
 }
 
+/// Re-exports all stuff from [ferveo_common::serialization].
+pub mod serialization {
+    pub use ferveo_common::serialization::*;
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// Ciphertext verification failed
@@ -322,14 +327,5 @@ mod tests {
             &pub_contexts[0].validator_public_key.encryption_key,
             &ciphertext,
         ));
-    }
-
-    #[test]
-    fn ctx_serde() {
-        let mut rng = test_rng();
-        let deal = deal::<E>(3, 2, &mut rng);
-        let ctx = deal.private_contexts.first().unwrap();
-        let serialized = serde_json::to_string_pretty(ctx).unwrap();
-        println!("{serialized}");
     }
 }
