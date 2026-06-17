@@ -142,9 +142,7 @@ mod tests {
 
         let bad_aad = "bad aad".as_bytes();
         assert!(
-            contexts[0]
-                .create_share(&ciphertext.header().unwrap(), bad_aad)
-                .is_err()
+            contexts[0].create_share(&ciphertext.header(), bad_aad).is_err()
         );
     }
 
@@ -165,9 +163,7 @@ mod tests {
         // We need at least threshold shares to decrypt
         let decryption_shares: Vec<_> = contexts
             .iter()
-            .map(|c| {
-                c.create_share(&ciphertext.header().unwrap(), aad).unwrap()
-            })
+            .map(|c| c.create_share(&ciphertext.header(), aad).unwrap())
             .take(threshold)
             .collect();
         let selected_contexts =
@@ -207,9 +203,7 @@ mod tests {
 
         let decryption_shares: Vec<_> = contexts
             .iter()
-            .map(|c| {
-                c.create_share(&ciphertext.header().unwrap(), aad).unwrap()
-            })
+            .map(|c| c.create_share(&ciphertext.header(), aad).unwrap())
             .take(threshold)
             .collect();
         let selected_contexts =
@@ -247,7 +241,7 @@ mod tests {
             .map(|context| {
                 context
                     .create_share_precomputed(
-                        &ciphertext.header().unwrap(),
+                        &ciphertext.header(),
                         aad,
                         &selected_participants,
                     )
@@ -285,9 +279,7 @@ mod tests {
 
         let decryption_shares: Vec<_> = contexts
             .iter()
-            .map(|c| {
-                c.create_share(&ciphertext.header().unwrap(), aad).unwrap()
-            })
+            .map(|c| c.create_share(&ciphertext.header(), aad).unwrap())
             .collect();
 
         // In simple tDec variant, we verify decryption shares only after decryption fails.

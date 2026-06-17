@@ -214,7 +214,7 @@ mod test_dkg_full {
         let (_, _, shared_secret) = create_shared_secret_simple_tdec(
             &dkg,
             AAD,
-            &ciphertext.header().unwrap(),
+            &ciphertext.header(),
             validator_keypairs.as_slice(),
             &transcripts,
         );
@@ -293,7 +293,7 @@ mod test_dkg_full {
                     local_aggregate
                         .aggregate
                         .create_decryption_share_precomputed(
-                            &ciphertext.header().unwrap(),
+                            &ciphertext.header(),
                             AAD,
                             validator_keypair,
                             validator.share_index,
@@ -349,7 +349,7 @@ mod test_dkg_full {
             create_shared_secret_simple_tdec(
                 &dkg,
                 AAD,
-                &ciphertext.header().unwrap(),
+                &ciphertext.header(),
                 validator_keypairs.as_slice(),
                 &transcripts,
             );
@@ -434,7 +434,7 @@ mod test_dkg_full {
         let (_, _, old_shared_secret) = create_shared_secret_simple_tdec(
             &dkg,
             AAD,
-            &ciphertext.header().unwrap(),
+            &ciphertext.header(),
             validator_keypairs.as_slice(),
             &transcripts,
         );
@@ -529,7 +529,7 @@ mod test_dkg_full {
                         .unwrap()
                         .aggregate
                         .create_decryption_share_simple(
-                            &ciphertext.header().unwrap(),
+                            &ciphertext.header(),
                             AAD,
                             validator_keypair,
                             validator.share_index,
@@ -631,7 +631,7 @@ mod test_dkg_full {
         let (_, _, old_shared_secret) = create_shared_secret_simple_tdec(
             &dkg,
             AAD,
-            &ciphertext.header().unwrap(),
+            &ciphertext.header(),
             validator_keypairs.as_slice(),
             &transcripts,
         );
@@ -678,7 +678,7 @@ mod test_dkg_full {
                         .unwrap();
                     new_aggregate
                         .create_decryption_share_simple(
-                            &ciphertext.header().unwrap(),
+                            &ciphertext.header(),
                             AAD,
                             validator_keypair,
                             validator.share_index,
@@ -750,7 +750,7 @@ mod test_dkg_full {
         let (_, _, old_shared_secret) = create_shared_secret_simple_tdec(
             &dkg,
             AAD,
-            &ciphertext.header().unwrap(),
+            &ciphertext.header(),
             validator_keypairs.as_slice(),
             &transcripts,
         );
@@ -871,7 +871,7 @@ mod test_dkg_full {
                     };
                     aggregate_after_handover
                         .create_decryption_share_simple(
-                            &ciphertext.header().unwrap(),
+                            &ciphertext.header(),
                             AAD,
                             keypair,
                             index as u32,

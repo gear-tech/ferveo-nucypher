@@ -71,8 +71,8 @@ pub fn decrypt_with_shared_secret(
 pub struct Ciphertext<T = Raw>(tdec_bls12_381::Ciphertext<T>);
 
 impl<T> Ciphertext<T> {
-    pub fn header(&self) -> Result<CiphertextHeader> {
-        Ok(CiphertextHeader(self.0.header()?))
+    pub fn header(&self) -> CiphertextHeader {
+        CiphertextHeader(self.0.header())
     }
 
     pub fn payload(&self) -> Vec<u8> {
@@ -530,7 +530,7 @@ mod test_ferveo_api {
                 server_aggregate
                     .create_decryption_share_precomputed(
                         &dkg,
-                        &ciphertext.header().unwrap(),
+                        &ciphertext.header(),
                         AAD,
                         validator_keypair,
                         &selected_validators,
@@ -620,7 +620,7 @@ mod test_ferveo_api {
                     server_aggregate
                         .create_decryption_share_simple(
                             &dkg,
-                            &ciphertext.header().unwrap(),
+                            &ciphertext.header(),
                             AAD,
                             validator_keypair,
                         )
@@ -892,7 +892,7 @@ mod test_ferveo_api {
         // Create an initial shared secret for testing purposes
         let public_key = server_aggregate.public_key();
         let ciphertext = encrypt(MSG, AAD, &public_key).unwrap();
-        let ciphertext_header = ciphertext.header().unwrap();
+        let ciphertext_header = ciphertext.header();
         let transcripts = messages
             .iter()
             .map(|(_, transcript)| transcript)

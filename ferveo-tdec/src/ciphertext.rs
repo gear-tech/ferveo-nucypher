@@ -111,20 +111,21 @@ pub type RawCiphertext<E> = Ciphertext<E, Raw>;
 
 impl<E: Pairing, T> Ciphertext<E, T> {
     pub fn check(&self, aad: &[u8]) -> Result<bool> {
-        self.header()?.check(aad)
+        self.header().check(aad)
     }
 
     pub fn ciphertext_hash(&self) -> [u8; 32] {
         sha256(&self.ciphertext)
     }
 
-    pub fn header(&self) -> Result<CiphertextHeader<E>> {
-        Ok(CiphertextHeader {
+    pub fn header(&self) -> CiphertextHeader<E> {
+        CiphertextHeader {
             commitment: self.commitment,
             auth_tag: self.auth_tag,
             ciphertext_hash: self.ciphertext_hash(),
-        })
+        }
     }
+
     pub fn payload(&self) -> Vec<u8> {
         self.ciphertext.clone()
     }
