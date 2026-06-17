@@ -259,9 +259,9 @@ impl<E: Pairing> DecryptionSharePrecomputed<E> {
 }
 
 pub fn verify_decryption_shares_simple<E: Pairing, T>(
-    pub_contexts: &Vec<PublicDecryptionContextSimple<E>>,
+    pub_contexts: &[PublicDecryptionContextSimple<E>],
     ciphertext: &Ciphertext<E, T>,
-    decryption_shares: &Vec<DecryptionShareSimple<E>>,
+    decryption_shares: &[DecryptionShareSimple<E>],
 ) -> bool {
     let blinded_key_shares = &pub_contexts
         .iter()
