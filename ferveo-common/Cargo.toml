@@ -16,6 +16,7 @@ rand = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 const-hex = { workspace = true, optional = true, features = ["serde"] }
+parity-scale-codec = { workspace = true, optional = true }
 
 
 [dev-dependencies]
@@ -28,3 +29,6 @@ default = []
 
 # Enables serialize/deserialize arkworks types with hex.
 ark-serde-hex = ["dep:const-hex"]
+
+# Enables SCALE encode/decode helpers for arkworks types.
+parity-codec = ["dep:parity-scale-codec"]

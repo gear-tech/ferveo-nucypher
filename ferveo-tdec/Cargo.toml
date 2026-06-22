@@ -65,7 +65,7 @@ default = ["bls12_381", "parity-codec"]
 bls12_381 = []
 
 # Enables encode/decode for Ciphertext using parity-scale-codec
-parity-codec = ["dep:parity-scale-codec"]
+parity-codec = ["dep:parity-scale-codec", "ferveo-common/parity-codec"]
 
 # Enables hex serialize/deserialize for arkworks types.
 serde-hex = ["ferveo-common/ark-serde-hex", "dep:const-hex"]

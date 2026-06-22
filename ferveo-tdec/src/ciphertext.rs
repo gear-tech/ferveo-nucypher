@@ -7,11 +7,15 @@ use chacha20poly1305::{
     ChaCha20Poly1305,
     aead::{Aead, KeyInit, Payload, generic_array::GenericArray},
 };
-use ferveo_common::serialization;
+use ferveo_common::serialization::{self, serialize_g1};
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, digest::Digest};
 use zeroize::{ZeroizeOnDrop, Zeroizing};
 
+#[cfg(feature = "parity-codec")]
+use ferveo_common::serialization::parity_codec_helpers::{
+    decode_g1, decode_g2, encode_g1, encode_g2,
+};
 #[cfg(feature = "parity-codec")]
 use parity_scale_codec::{Decode, Encode, Error as CodecError, Input, Output};
 
@@ -38,34 +42,11 @@ pub struct Ciphertext<E: Pairing, T = Raw> {
     pub _type: PhantomData<T>,
 }
 
-fn serialize_point<P: CanonicalSerialize>(point: &P) -> Vec<u8> {
-    let mut bytes = Vec::with_capacity(point.compressed_size());
-    point
-        .serialize_compressed(&mut bytes)
-        .expect("serializing to Vec should not fail");
-    bytes
-}
-
-pub(crate) fn serialize_g1<E: Pairing>(point: &E::G1Affine) -> Vec<u8> {
-    serialize_point(point)
-}
-
-pub(crate) fn serialize_g2<E: Pairing>(point: &E::G2Affine) -> Vec<u8> {
-    serialize_point(point)
-}
-
-pub(crate) fn serialize_target<E: Pairing>(point: &E::TargetField) -> Vec<u8> {
-    serialize_point(point)
-}
-
 #[cfg(feature = "parity-codec")]
 impl<E: Pairing, T> Encode for Ciphertext<E, T> {
     fn encode_to<O: Output + ?Sized>(&self, dest: &mut O) {
-        let commitment = serialize_g1::<E>(&self.commitment);
-        let auth_tag = serialize_g2::<E>(&self.auth_tag);
-
-        commitment.encode_to(dest);
-        auth_tag.encode_to(dest);
+        encode_g1::<E, _>(&self.commitment, dest);
+        encode_g2::<E, _>(&self.auth_tag, dest);
         self.ciphertext.encode_to(dest);
     }
 }
@@ -75,26 +56,8 @@ impl<E: Pairing, T> Decode for Ciphertext<E, T> {
     fn decode<I: Input>(
         input: &mut I,
     ) -> core::result::Result<Self, CodecError> {
-        let commitment_bytes = <Vec<u8> as Decode>::decode(input)?;
-
-        let commitment =
-            <E::G1Affine as CanonicalDeserialize>::deserialize_compressed(
-                commitment_bytes.as_slice(),
-            )
-            .map_err(|_| {
-                CodecError::from("failed to deserialize E::G1Affine")
-            })?;
-
-        let auth_tag_bytes = <Vec<u8> as Decode>::decode(input)?;
-
-        let auth_tag =
-            <E::G2Affine as CanonicalDeserialize>::deserialize_compressed(
-                auth_tag_bytes.as_slice(),
-            )
-            .map_err(|_| {
-                CodecError::from("failed to deserialize E::G2Affine")
-            })?;
-
+        let commitment = decode_g1::<E, _>(input)?;
+        let auth_tag = decode_g2::<E, _>(input)?;
         let ciphertext = <Vec<u8> as Decode>::decode(input)?;
         Ok(Self { commitment, auth_tag, ciphertext, _type: PhantomData })
     }

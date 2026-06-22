@@ -2,7 +2,6 @@ use std::ops::Mul;
 
 use ark_ec::{CurveGroup, PrimeGroup, pairing::Pairing};
 use ark_ff::Field;
-use ark_serialize::CanonicalDeserialize;
 use ferveo_common::serialization;
 use itertools::izip;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -12,6 +11,10 @@ use crate::{
     PublicDecryptionContextSimple, Result,
 };
 
+#[cfg(feature = "parity-codec")]
+use ferveo_common::serialization::parity_codec_helpers::{
+    decode_g1, decode_target, encode_g1, encode_target,
+};
 #[cfg(feature = "parity-codec")]
 use parity_scale_codec::{Decode, Encode, Error as CodecError, Output};
 
@@ -133,14 +136,8 @@ impl<E: Pairing> DecryptionShareSimple<E> {
 #[cfg(feature = "parity-codec")]
 impl<E: Pairing> Encode for DecryptionShareSimple<E> {
     fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
-        let decryption_share_bytes =
-            crate::ciphertext::serialize_target::<E>(&self.decryption_share);
-        decryption_share_bytes.encode_to(dest);
-
-        let checksum_bytes = crate::ciphertext::serialize_g1::<E>(
-            &self.validator_checksum.checksum,
-        );
-        checksum_bytes.encode_to(dest);
+        encode_target::<E, _>(&self.decryption_share, dest);
+        encode_g1::<E, _>(&self.validator_checksum.checksum, dest);
     }
 }
 
@@ -149,24 +146,8 @@ impl<E: Pairing> Decode for DecryptionShareSimple<E> {
     fn decode<I: parity_scale_codec::Input>(
         input: &mut I,
     ) -> core::result::Result<Self, CodecError> {
-        let bytes = <Vec<u8> as Decode>::decode(input)?;
-        let share_result =
-            <E::TargetField as CanonicalDeserialize>::deserialize_compressed(
-                &mut bytes.as_slice(),
-            );
-
-        let decryption_share = share_result.map_err(|_| {
-            CodecError::from("failed to deserialize E::TargetField")
-        })?;
-
-        let bytes = <Vec<u8> as Decode>::decode(input)?;
-        let checksum_result =
-            <E::G1Affine as CanonicalDeserialize>::deserialize_compressed(
-                &mut bytes.as_slice(),
-            );
-        let checksum = checksum_result.map_err(|_| {
-            CodecError::from("failed to deserialize E::G1Affine")
-        })?;
+        let decryption_share = decode_target::<E, _>(input)?;
+        let checksum = decode_g1::<E, _>(input)?;
 
         Ok(Self {
             decryption_share,
