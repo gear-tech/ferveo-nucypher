@@ -2,10 +2,18 @@
 
 use ark_ec::pairing::Pairing;
 use ark_ff::{Field, One, PrimeField, Zero};
+#[cfg(feature = "parity-codec")]
+use ark_serialize::CanonicalDeserialize;
 use ferveo_common::serialization;
 use itertools::izip;
 use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, ZeroizeOnDrop};
+
+#[cfg(feature = "parity-codec")]
+use parity_scale_codec::{Decode, Encode, Error as CodecError, Input, Output};
+
+#[cfg(feature = "parity-codec")]
+use crate::ciphertext::serialize_target;
 
 #[derive(
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
@@ -15,6 +23,26 @@ pub struct SharedSecret<E: Pairing>(
     #[serde(with = "serialization::ark_serde_configured")]
     pub(crate)  E::TargetField,
 );
+
+#[cfg(feature = "parity-codec")]
+impl<E: Pairing> Encode for SharedSecret<E> {
+    fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
+        serialize_target::<E>(&self.0).encode_to(dest);
+    }
+}
+
+#[cfg(feature = "parity-codec")]
+impl<E: Pairing> Decode for SharedSecret<E> {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, CodecError> {
+        let gt_bytes = <Vec<u8> as Decode>::decode(input)?;
+
+        <E::TargetField as CanonicalDeserialize>::deserialize_compressed(
+            &mut gt_bytes.as_slice(),
+        )
+        .map(Self)
+        .map_err(|_| CodecError::from("failed to deserialize E::TargetField"))
+    }
+}
 
 use crate::{DecryptionSharePrecomputed, DecryptionShareSimple};
 

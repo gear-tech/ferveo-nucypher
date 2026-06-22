@@ -12,6 +12,9 @@ use serde::{Deserialize, Serialize};
 use sha2::{Sha256, digest::Digest};
 use zeroize::{ZeroizeOnDrop, Zeroizing};
 
+#[cfg(feature = "parity-codec")]
+use parity_scale_codec::{Decode, Encode, Error as CodecError, Input, Output};
+
 use crate::{
     Codec, DkgPublicKey, Error, PrivateKeyShare, Result, SharedSecret,
     htp_bls12381_g2,
@@ -56,8 +59,8 @@ pub(crate) fn serialize_target<E: Pairing>(point: &E::TargetField) -> Vec<u8> {
 }
 
 #[cfg(feature = "parity-codec")]
-impl<E: Pairing, T> parity_scale_codec::Encode for Ciphertext<E, T> {
-    fn encode_to<O: parity_scale_codec::Output + ?Sized>(&self, dest: &mut O) {
+impl<E: Pairing, T> Encode for Ciphertext<E, T> {
+    fn encode_to<O: Output + ?Sized>(&self, dest: &mut O) {
         let commitment = serialize_g1::<E>(&self.commitment);
         let auth_tag = serialize_g2::<E>(&self.auth_tag);
 
@@ -68,38 +71,31 @@ impl<E: Pairing, T> parity_scale_codec::Encode for Ciphertext<E, T> {
 }
 
 #[cfg(feature = "parity-codec")]
-impl<E: Pairing, T> parity_scale_codec::Decode for Ciphertext<E, T> {
-    fn decode<I: parity_scale_codec::Input>(
+impl<E: Pairing, T> Decode for Ciphertext<E, T> {
+    fn decode<I: Input>(
         input: &mut I,
-    ) -> core::result::Result<Self, parity_scale_codec::Error> {
-        let commitment_bytes =
-            <Vec<u8> as parity_scale_codec::Decode>::decode(input)?;
+    ) -> core::result::Result<Self, CodecError> {
+        let commitment_bytes = <Vec<u8> as Decode>::decode(input)?;
 
         let commitment =
             <E::G1Affine as CanonicalDeserialize>::deserialize_compressed(
                 commitment_bytes.as_slice(),
             )
             .map_err(|_| {
-                parity_scale_codec::Error::from(
-                    "failed to deserialize E::G1Affine",
-                )
+                CodecError::from("failed to deserialize E::G1Affine")
             })?;
 
-        let auth_tag_bytes =
-            <Vec<u8> as parity_scale_codec::Decode>::decode(input)?;
+        let auth_tag_bytes = <Vec<u8> as Decode>::decode(input)?;
 
         let auth_tag =
             <E::G2Affine as CanonicalDeserialize>::deserialize_compressed(
                 auth_tag_bytes.as_slice(),
             )
             .map_err(|_| {
-                parity_scale_codec::Error::from(
-                    "failed to deserialize E::G2Affine",
-                )
+                CodecError::from("failed to deserialize E::G2Affine")
             })?;
 
-        let ciphertext =
-            <Vec<u8> as parity_scale_codec::Decode>::decode(input)?;
+        let ciphertext = <Vec<u8> as Decode>::decode(input)?;
         Ok(Self { commitment, auth_tag, ciphertext, _type: PhantomData })
     }
 }
