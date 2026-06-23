@@ -1,9 +1,12 @@
+use std::{fmt, str::FromStr};
+
 use ark_ec::pairing::Pairing;
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     BlindedKeyShare, CiphertextHeader, DecryptionSharePrecomputed,
-    DecryptionShareSimple, PrivateKeyShare, Result, ShareCommitment,
+    DecryptionShareSimple, Error, PrivateKeyShare, Result, ShareCommitment,
     prepare_combine_simple,
 };
 use ferveo_common::serialization;
@@ -14,6 +17,9 @@ use ferveo_common::serialization;
 /// These values can be distributed to clients or aggregators. They identify
 /// the participant's point in the secret-sharing domain and provide the public
 /// material needed to verify and combine decryption shares.
+///
+/// Its command-line string representation is `0x`-prefixed hex of the
+/// concatenated canonical compressed values, in field order.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(bound(serialize = "", deserialize = ""))]
 pub struct PublicDecryptionContextSimple<E: Pairing> {
@@ -36,6 +42,62 @@ pub struct PublicDecryptionContextSimple<E: Pairing> {
     pub blinded_key_share: BlindedKeyShare<E>,
     /// Validator public key used to verify decryption-share checksums.
     pub validator_public_key: ferveo_common::PublicKey<E>,
+}
+
+impl<E: Pairing> fmt::Display for PublicDecryptionContextSimple<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut bytes = Vec::new();
+        self.domain.serialize_compressed(&mut bytes).map_err(|_| fmt::Error)?;
+        self.share_commitment
+            .0
+            .serialize_compressed(&mut bytes)
+            .map_err(|_| fmt::Error)?;
+        self.blinded_key_share
+            .validator_public_key
+            .serialize_compressed(&mut bytes)
+            .map_err(|_| fmt::Error)?;
+        self.blinded_key_share
+            .blinded_key_share
+            .serialize_compressed(&mut bytes)
+            .map_err(|_| fmt::Error)?;
+        self.validator_public_key
+            .encryption_key
+            .serialize_compressed(&mut bytes)
+            .map_err(|_| fmt::Error)?;
+        write!(f, "0x{}", hex::encode(bytes))
+    }
+}
+
+impl<E: Pairing> FromStr for PublicDecryptionContextSimple<E> {
+    type Err = Error;
+
+    fn from_str(value: &str) -> Result<Self> {
+        let bytes = hex::decode(value.strip_prefix("0x").unwrap_or(value))?;
+        let mut input = bytes.as_slice();
+        let domain = E::ScalarField::deserialize_compressed(&mut input)?;
+        let share_commitment = E::G1Affine::deserialize_compressed(&mut input)?;
+        let blinded_validator_public_key =
+            E::G2Affine::deserialize_compressed(&mut input)?;
+        let blinded_key_share =
+            E::G2Affine::deserialize_compressed(&mut input)?;
+        let validator_public_key =
+            E::G2Affine::deserialize_compressed(&mut input)?;
+        if !input.is_empty() {
+            return Err(Error::TrailingBytes(input.len()));
+        }
+
+        Ok(Self {
+            domain,
+            share_commitment: ShareCommitment(share_commitment),
+            blinded_key_share: BlindedKeyShare {
+                validator_public_key: blinded_validator_public_key,
+                blinded_key_share,
+            },
+            validator_public_key: ferveo_common::PublicKey {
+                encryption_key: validator_public_key,
+            },
+        })
+    }
 }
 
 /// Private per-participant context for producing simple threshold decryption

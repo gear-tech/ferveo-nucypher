@@ -26,6 +26,7 @@ ark-std = { workspace = true }
 
 bincode = { workspace = true }
 chacha20poly1305 = { workspace = true }
+hex = { workspace = true }
 itertools = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
@@ -40,8 +41,8 @@ parity-scale-codec = { workspace = true, optional = true, features = [
 const-hex = { workspace = true, optional = true, features = ["serde"] }
 
 [dev-dependencies]
+clap = { version = "4.6", features = ["derive"] }
 criterion = { workspace = true, features = ["html_reports"] }
-hex = { workspace = true }
 rand_core = { workspace = true }
 serde_json.workspace = true
 
