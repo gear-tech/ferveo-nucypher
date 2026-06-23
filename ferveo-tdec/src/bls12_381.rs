@@ -17,6 +17,9 @@ pub type Result<T> = crate::Result<T>;
 pub type PrivateDecryptionContextSimple =
     crate::PrivateDecryptionContextSimple<E>;
 
+pub type PublicDecryptionContextSimple =
+    crate::PublicDecryptionContextSimple<E>;
+
 pub type DecryptionSharePrecomputed = crate::DecryptionSharePrecomputed<E>;
 
 pub type DecryptionShareSimple = crate::DecryptionShareSimple<E>;
