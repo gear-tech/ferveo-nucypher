@@ -42,6 +42,22 @@ impl<E: Pairing> ValidatorShareChecksum<E> {
         Ok(Self { checksum })
     }
 
+    /// Verifies that a decryption share is consistent with the validator's
+    /// public decryption data and the ciphertext commitment.
+    ///
+    /// This checks the following pairing equations:
+    ///
+    /// - `D_i == e(C_i, Y_i)`, where `D_i` is the decryption share, `C_i` is
+    ///   this checksum, and `Y_i` is the validator's blinded/aggregate key
+    ///   share.
+    /// - `e(C_i, ek_i) == e(U, H)`, where `ek_i` is the validator public key,
+    ///   `U` is the ciphertext commitment, and `H` is the G2 generator.
+    ///
+    /// Together these equations show that the published decryption share was
+    /// produced from the private key share corresponding to the supplied public
+    /// validator data for this ciphertext commitment. This method does not check
+    /// ciphertext validity or associated data; callers that need that guarantee
+    /// should validate the ciphertext header separately.
     pub fn verify<T>(
         &self,
         decryption_share: &E::TargetField,
@@ -118,6 +134,9 @@ impl<E: Pairing> DecryptionShareSimple<E> {
         Ok(Self { decryption_share, validator_checksum })
     }
     /// Verify that the decryption share is valid.
+    ///
+    /// See [`ValidatorShareChecksum::verify`] for the pairing equations and
+    /// security meaning of this check.
     pub fn verify<T>(
         &self,
         share_aggregate: &E::G2Affine,
