@@ -5,7 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.6.0 (2026-06-29)
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 1 commit contributed to the release.
+ - 0 commits were understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' were seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Use workspace version in crates ([`430fd71`](https://github.com/gear-tech/ferveo-nucypher/commit/430fd7193143a855fb60e718c1b245670c17e655))
+</details>
+
 ## v0.5.0 (2026-06-11)
+
+<csr-id-379dabea4ab9c9e428a69c6683eafe2447ebf788/>
+<csr-id-be89332821d2fa301519787075e5454963271087/>
+<csr-id-983110c4dbb41eb7f0fba2c06f561b68718d0f29/>
+<csr-id-ca43921af214903e2d1345bb05b5f9c6e1987919/>
 
 ### Chore
 
@@ -53,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 46 commits contributed to the release.
+ - 47 commits contributed to the release.
  - 4 commits were understood as [conventional](https://www.conventionalcommits.org).
  - 2 unique issues were worked on: [#7](https://github.com/gear-tech/ferveo-nucypher/issues/7), [#72](https://github.com/gear-tech/ferveo-nucypher/issues/72)
 
@@ -68,6 +93,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  * **[#72](https://github.com/gear-tech/ferveo-nucypher/issues/72)**
     - Refactor subproductdomain ([`2d8026b`](https://github.com/gear-tech/ferveo-nucypher/commit/2d8026b2299fd9b67c77fb3b4e565ff9f4e6505b))
  * **Uncategorized**
+    - Bump subproductdomain-gear v0.5.0, ferveo-gear-common v0.5.0, ferveo-gear-tdec v0.5.0 ([`951cef2`](https://github.com/gear-tech/ferveo-nucypher/commit/951cef271ac079d98e6efdb58ce44fdca2121474))
     - Merge pull request #1 from gear-tech/chore/ark-0.6-and-cleanup ([`4f7f8f9`](https://github.com/gear-tech/ferveo-nucypher/commit/4f7f8f9855aafc19bb93c6dd367b6c057d5b65d0))
     - Bump arkworks to 0.6, edition 2024, remove python/wasm bindings ([`be89332`](https://github.com/gear-tech/ferveo-nucypher/commit/be89332821d2fa301519787075e5454963271087))
     - Release ferveo-nucypher-common v0.4.0, subproductdomain-nucypher v0.4.0, ferveo-nucypher-tdec v0.4.0, ferveo-nucypher v0.4.0 ([`b50d448`](https://github.com/gear-tech/ferveo-nucypher/commit/b50d448521b5fb29c630af4c9a3994f3b40060c8))
