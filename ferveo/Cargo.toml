@@ -1,6 +1,6 @@
 [package]
 name = "ferveo-nucypher"
-version.workspace = true
+version = "0.6.0"
 edition.workspace = true
 license.workspace = true
 repository = "https://github.com/gear-tech/ferveo-nucypher"
