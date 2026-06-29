@@ -7,6 +7,13 @@ use itertools::izip;
 use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
+#[cfg(feature = "parity-codec")]
+use ferveo_common::serialization::parity_codec_helpers::{
+    decode_target, encode_target,
+};
+#[cfg(feature = "parity-codec")]
+use parity_scale_codec::{Decode, Encode, Error as CodecError, Input, Output};
+
 #[derive(
     Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop,
 )]
@@ -15,6 +22,20 @@ pub struct SharedSecret<E: Pairing>(
     #[serde(with = "serialization::ark_serde_configured")]
     pub(crate)  E::TargetField,
 );
+
+#[cfg(feature = "parity-codec")]
+impl<E: Pairing> Encode for SharedSecret<E> {
+    fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
+        encode_target::<E, _>(&self.0, dest);
+    }
+}
+
+#[cfg(feature = "parity-codec")]
+impl<E: Pairing> Decode for SharedSecret<E> {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, CodecError> {
+        decode_target::<E, _>(input).map(Self)
+    }
+}
 
 use crate::{DecryptionSharePrecomputed, DecryptionShareSimple};
 

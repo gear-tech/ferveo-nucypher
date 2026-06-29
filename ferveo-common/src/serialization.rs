@@ -1,8 +1,58 @@
 //! This adds a few utility functions for serializing and deserializing
 //! [arkworks](http://arkworks.rs/) types that implement [CanonicalSerialize] and [CanonicalDeserialize].
 
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use ark_ec::pairing::Pairing;
+use ark_serialize::{
+    CanonicalDeserialize, CanonicalSerialize, SerializationError,
+};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de, ser};
+
+#[cfg(feature = "parity-codec")]
+use parity_scale_codec::{Decode, Encode, Error as CodecError, Input, Output};
+
+fn serialize_point<P: CanonicalSerialize>(point: &P) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(point.compressed_size());
+    point
+        .serialize_compressed(&mut bytes)
+        .expect("serializing to Vec should not fail");
+    bytes
+}
+
+fn deserialize_point<P: CanonicalDeserialize>(
+    bytes: &[u8],
+) -> Result<P, SerializationError> {
+    P::deserialize_compressed(bytes)
+}
+
+pub fn serialize_g1<E: Pairing>(point: &E::G1Affine) -> Vec<u8> {
+    serialize_point(point)
+}
+
+pub fn deserialize_g1<E: Pairing>(
+    bytes: &[u8],
+) -> Result<E::G1Affine, SerializationError> {
+    deserialize_point(bytes)
+}
+
+pub fn serialize_g2<E: Pairing>(point: &E::G2Affine) -> Vec<u8> {
+    serialize_point(point)
+}
+
+pub fn deserialize_g2<E: Pairing>(
+    bytes: &[u8],
+) -> Result<E::G2Affine, SerializationError> {
+    deserialize_point(bytes)
+}
+
+pub fn serialize_target<E: Pairing>(point: &E::TargetField) -> Vec<u8> {
+    serialize_point(point)
+}
+
+pub fn deserialize_target<E: Pairing>(
+    bytes: &[u8],
+) -> Result<E::TargetField, SerializationError> {
+    deserialize_point(bytes)
+}
 
 pub mod ark_serde_default {
     use core::{
@@ -97,6 +147,68 @@ pub mod ark_serde_hex {
     }
 }
 
+#[cfg(feature = "parity-codec")]
+pub mod parity_codec_helpers {
+    use super::{
+        CanonicalDeserialize, CanonicalSerialize, CodecError, Decode, Encode,
+        Input, Output, Pairing, deserialize_point, serialize_point,
+    };
+
+    fn encode_point<P: CanonicalSerialize, O: Output + ?Sized>(
+        point: &P,
+        dest: &mut O,
+    ) {
+        serialize_point(point).encode_to(dest);
+    }
+
+    fn decode_point<P: CanonicalDeserialize, I: Input>(
+        input: &mut I,
+        error: &'static str,
+    ) -> Result<P, CodecError> {
+        let bytes = <Vec<u8> as Decode>::decode(input)?;
+        deserialize_point(&bytes).map_err(|_| CodecError::from(error))
+    }
+
+    pub fn encode_g1<E: Pairing, O: Output + ?Sized>(
+        point: &E::G1Affine,
+        dest: &mut O,
+    ) {
+        encode_point(point, dest);
+    }
+
+    pub fn decode_g1<E: Pairing, I: Input>(
+        input: &mut I,
+    ) -> Result<E::G1Affine, CodecError> {
+        decode_point(input, "failed to deserialize E::G1Affine")
+    }
+
+    pub fn encode_g2<E: Pairing, O: Output + ?Sized>(
+        point: &E::G2Affine,
+        dest: &mut O,
+    ) {
+        encode_point(point, dest);
+    }
+
+    pub fn decode_g2<E: Pairing, I: Input>(
+        input: &mut I,
+    ) -> Result<E::G2Affine, CodecError> {
+        decode_point(input, "failed to deserialize E::G2Affine")
+    }
+
+    pub fn encode_target<E: Pairing, O: Output + ?Sized>(
+        point: &E::TargetField,
+        dest: &mut O,
+    ) {
+        encode_point(point, dest);
+    }
+
+    pub fn decode_target<E: Pairing, I: Input>(
+        input: &mut I,
+    ) -> Result<E::TargetField, CodecError> {
+        decode_point(input, "failed to deserialize E::TargetField")
+    }
+}
+
 /// Arkworks serde format selected by the `ark-serde-hex` feature.
 #[cfg(feature = "ark-serde-hex")]
 pub use ark_serde_hex as ark_serde_configured;
@@ -130,7 +242,13 @@ impl<T: for<'de> Deserialize<'de>> FromBytes for T {
 
 #[cfg(test)]
 mod test {
+    use ark_bls12_381::Bls12_381;
+    use ark_ec::{AffineRepr, pairing::Pairing};
+
     use super::*;
+
+    #[cfg(feature = "parity-codec")]
+    pub use parity_codec_helpers::*;
 
     #[derive(Serialize, Deserialize, Debug, PartialEq)]
     struct Test {
@@ -144,6 +262,51 @@ mod test {
         let bytes = test.to_bytes().unwrap();
         let test2 = Test::from_bytes(&bytes).unwrap();
         assert_eq!(test, test2);
+    }
+
+    #[test]
+    fn ark_points_round_trip_through_compressed_bytes() {
+        type E = Bls12_381;
+
+        let g1 = <E as Pairing>::G1Affine::generator();
+        let g2 = <E as Pairing>::G2Affine::generator();
+        let target = E::pairing(g1, g2).0;
+
+        assert_eq!(deserialize_g1::<E>(&serialize_g1::<E>(&g1)).unwrap(), g1);
+        assert_eq!(deserialize_g2::<E>(&serialize_g2::<E>(&g2)).unwrap(), g2);
+        assert_eq!(
+            deserialize_target::<E>(&serialize_target::<E>(&target)).unwrap(),
+            target
+        );
+    }
+
+    #[cfg(feature = "parity-codec")]
+    #[test]
+    fn ark_points_round_trip_through_scale_codec() {
+        type E = Bls12_381;
+
+        let g1 = <E as Pairing>::G1Affine::generator();
+        let g2 = <E as Pairing>::G2Affine::generator();
+        let target = E::pairing(g1, g2).0;
+        let mut encoded = Vec::new();
+
+        encode_g1::<E, _>(&g1, &mut encoded);
+        encode_g2::<E, _>(&g2, &mut encoded);
+        encode_target::<E, _>(&target, &mut encoded);
+
+        let expected = [
+            serialize_g1::<E>(&g1).encode(),
+            serialize_g2::<E>(&g2).encode(),
+            serialize_target::<E>(&target).encode(),
+        ]
+        .concat();
+        assert_eq!(encoded, expected);
+
+        let mut input = encoded.as_slice();
+        assert_eq!(decode_g1::<E, _>(&mut input).unwrap(), g1);
+        assert_eq!(decode_g2::<E, _>(&mut input).unwrap(), g2);
+        assert_eq!(decode_target::<E, _>(&mut input).unwrap(), target);
+        assert!(input.is_empty());
     }
 }
 

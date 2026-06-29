@@ -1,21 +1,48 @@
-use std::{collections::HashMap, ops::Mul};
+use std::{collections::HashMap, fmt, ops::Mul, str::FromStr};
 
 use ark_ec::{CurveGroup, pairing::Pairing};
 use ark_ff::Field;
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ferveo_common::{Keypair, serialization};
 use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::{
     CiphertextHeader, DecryptionSharePrecomputed, DecryptionShareSimple,
-    DomainPoint, Result, prepare_combine_simple,
+    DomainPoint, Error, Result, prepare_combine_simple,
 };
 
+/// Public key produced by the dealer setup.
+///
+/// Its command-line string representation is `0x`-prefixed hex of the
+/// canonical compressed G1 point.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(bound(serialize = "", deserialize = ""))]
 pub struct DkgPublicKey<E: Pairing>(
     #[serde(with = "serialization::ark_serde_configured")] pub E::G1Affine,
 );
+
+impl<E: Pairing> fmt::Display for DkgPublicKey<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut bytes = Vec::with_capacity(self.0.compressed_size());
+        self.0.serialize_compressed(&mut bytes).map_err(|_| fmt::Error)?;
+        write!(f, "0x{}", hex::encode(bytes))
+    }
+}
+
+impl<E: Pairing> FromStr for DkgPublicKey<E> {
+    type Err = Error;
+
+    fn from_str(value: &str) -> Result<Self> {
+        let bytes = hex::decode(value.strip_prefix("0x").unwrap_or(value))?;
+        let mut input = bytes.as_slice();
+        let public_key = E::G1Affine::deserialize_compressed(&mut input)?;
+        if !input.is_empty() {
+            return Err(Error::TrailingBytes(input.len()));
+        }
+        Ok(Self(public_key))
+    }
+}
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(bound(serialize = "", deserialize = ""))]

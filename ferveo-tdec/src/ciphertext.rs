@@ -7,10 +7,17 @@ use chacha20poly1305::{
     ChaCha20Poly1305,
     aead::{Aead, KeyInit, Payload, generic_array::GenericArray},
 };
-use ferveo_common::serialization;
+use ferveo_common::serialization::{self, serialize_g1};
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, digest::Digest};
 use zeroize::{ZeroizeOnDrop, Zeroizing};
+
+#[cfg(feature = "parity-codec")]
+use ferveo_common::serialization::parity_codec_helpers::{
+    decode_g1, decode_g2, encode_g1, encode_g2,
+};
+#[cfg(feature = "parity-codec")]
+use parity_scale_codec::{Decode, Encode, Error as CodecError, Input, Output};
 
 use crate::{
     Codec, DkgPublicKey, Error, PrivateKeyShare, Result, SharedSecret,
@@ -35,70 +42,23 @@ pub struct Ciphertext<E: Pairing, T = Raw> {
     pub _type: PhantomData<T>,
 }
 
-#[inline]
-fn serialize_point<P: CanonicalSerialize>(point: &P) -> Vec<u8> {
-    let mut bytes = Vec::with_capacity(point.compressed_size());
-    point
-        .serialize_compressed(&mut bytes)
-        .expect("serializing to Vec should not fail");
-    bytes
-}
-
-#[inline]
-fn serialize_g1<E: Pairing>(point: &E::G1Affine) -> Vec<u8> {
-    serialize_point(point)
-}
-
-#[inline]
-fn serialize_g2<E: Pairing>(point: &E::G2Affine) -> Vec<u8> {
-    serialize_point(point)
-}
-
 #[cfg(feature = "parity-codec")]
-impl<E: Pairing, T> parity_scale_codec::Encode for Ciphertext<E, T> {
-    fn encode_to<O: parity_scale_codec::Output + ?Sized>(&self, dest: &mut O) {
-        let commitment = serialize_g1::<E>(&self.commitment);
-        let auth_tag = serialize_g2::<E>(&self.auth_tag);
-
-        commitment.encode_to(dest);
-        auth_tag.encode_to(dest);
+impl<E: Pairing, T> Encode for Ciphertext<E, T> {
+    fn encode_to<O: Output + ?Sized>(&self, dest: &mut O) {
+        encode_g1::<E, _>(&self.commitment, dest);
+        encode_g2::<E, _>(&self.auth_tag, dest);
         self.ciphertext.encode_to(dest);
     }
 }
 
 #[cfg(feature = "parity-codec")]
-impl<E: Pairing, T> parity_scale_codec::Decode for Ciphertext<E, T> {
-    fn decode<I: parity_scale_codec::Input>(
+impl<E: Pairing, T> Decode for Ciphertext<E, T> {
+    fn decode<I: Input>(
         input: &mut I,
-    ) -> core::result::Result<Self, parity_scale_codec::Error> {
-        let commitment_bytes =
-            <Vec<u8> as parity_scale_codec::Decode>::decode(input)?;
-
-        let commitment =
-            <E::G1Affine as CanonicalDeserialize>::deserialize_compressed(
-                commitment_bytes.as_slice(),
-            )
-            .map_err(|_| {
-                parity_scale_codec::Error::from(
-                    "failed to deserialize E::G1Affine",
-                )
-            })?;
-
-        let auth_tag_bytes =
-            <Vec<u8> as parity_scale_codec::Decode>::decode(input)?;
-
-        let auth_tag =
-            <E::G2Affine as CanonicalDeserialize>::deserialize_compressed(
-                auth_tag_bytes.as_slice(),
-            )
-            .map_err(|_| {
-                parity_scale_codec::Error::from(
-                    "failed to deserialize E::G2Affine",
-                )
-            })?;
-
-        let ciphertext =
-            <Vec<u8> as parity_scale_codec::Decode>::decode(input)?;
+    ) -> core::result::Result<Self, CodecError> {
+        let commitment = decode_g1::<E, _>(input)?;
+        let auth_tag = decode_g2::<E, _>(input)?;
+        let ciphertext = <Vec<u8> as Decode>::decode(input)?;
         Ok(Self { commitment, auth_tag, ciphertext, _type: PhantomData })
     }
 }
@@ -110,20 +70,21 @@ pub type RawCiphertext<E> = Ciphertext<E, Raw>;
 
 impl<E: Pairing, T> Ciphertext<E, T> {
     pub fn check(&self, aad: &[u8]) -> Result<bool> {
-        self.header()?.check(aad)
+        self.header().check(aad)
     }
 
     pub fn ciphertext_hash(&self) -> [u8; 32] {
         sha256(&self.ciphertext)
     }
 
-    pub fn header(&self) -> Result<CiphertextHeader<E>> {
-        Ok(CiphertextHeader {
+    pub fn header(&self) -> CiphertextHeader<E> {
+        CiphertextHeader {
             commitment: self.commitment,
             auth_tag: self.auth_tag,
             ciphertext_hash: self.ciphertext_hash(),
-        })
+        }
     }
+
     pub fn payload(&self) -> Vec<u8> {
         self.ciphertext.clone()
     }

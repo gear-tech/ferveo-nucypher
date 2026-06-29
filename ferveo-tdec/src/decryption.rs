@@ -11,6 +11,13 @@ use crate::{
     PublicDecryptionContextSimple, Result,
 };
 
+#[cfg(feature = "parity-codec")]
+use ferveo_common::serialization::parity_codec_helpers::{
+    decode_g1, decode_target, encode_g1, encode_target,
+};
+#[cfg(feature = "parity-codec")]
+use parity_scale_codec::{Decode, Encode, Error as CodecError, Output};
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(bound(serialize = "", deserialize = ""))]
 pub struct ValidatorShareChecksum<E: Pairing> {
@@ -35,6 +42,22 @@ impl<E: Pairing> ValidatorShareChecksum<E> {
         Ok(Self { checksum })
     }
 
+    /// Verifies that a decryption share is consistent with the validator's
+    /// public decryption data and the ciphertext commitment.
+    ///
+    /// This checks the following pairing equations:
+    ///
+    /// - `D_i == e(C_i, Y_i)`, where `D_i` is the decryption share, `C_i` is
+    ///   this checksum, and `Y_i` is the validator's blinded/aggregate key
+    ///   share.
+    /// - `e(C_i, ek_i) == e(U, H)`, where `ek_i` is the validator public key,
+    ///   `U` is the ciphertext commitment, and `H` is the G2 generator.
+    ///
+    /// Together these equations show that the published decryption share was
+    /// produced from the private key share corresponding to the supplied public
+    /// validator data for this ciphertext commitment. This method does not check
+    /// ciphertext validity or associated data; callers that need that guarantee
+    /// should validate the ciphertext header separately.
     pub fn verify<T>(
         &self,
         decryption_share: &E::TargetField,
@@ -111,6 +134,9 @@ impl<E: Pairing> DecryptionShareSimple<E> {
         Ok(Self { decryption_share, validator_checksum })
     }
     /// Verify that the decryption share is valid.
+    ///
+    /// See [`ValidatorShareChecksum::verify`] for the pairing equations and
+    /// security meaning of this check.
     pub fn verify<T>(
         &self,
         share_aggregate: &E::G2Affine,
@@ -123,6 +149,29 @@ impl<E: Pairing> DecryptionShareSimple<E> {
             validator_public_key,
             ciphertext,
         )
+    }
+}
+
+#[cfg(feature = "parity-codec")]
+impl<E: Pairing> Encode for DecryptionShareSimple<E> {
+    fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
+        encode_target::<E, _>(&self.decryption_share, dest);
+        encode_g1::<E, _>(&self.validator_checksum.checksum, dest);
+    }
+}
+
+#[cfg(feature = "parity-codec")]
+impl<E: Pairing> Decode for DecryptionShareSimple<E> {
+    fn decode<I: parity_scale_codec::Input>(
+        input: &mut I,
+    ) -> core::result::Result<Self, CodecError> {
+        let decryption_share = decode_target::<E, _>(input)?;
+        let checksum = decode_g1::<E, _>(input)?;
+
+        Ok(Self {
+            decryption_share,
+            validator_checksum: ValidatorShareChecksum { checksum },
+        })
     }
 }
 
@@ -210,9 +259,9 @@ impl<E: Pairing> DecryptionSharePrecomputed<E> {
 }
 
 pub fn verify_decryption_shares_simple<E: Pairing, T>(
-    pub_contexts: &Vec<PublicDecryptionContextSimple<E>>,
+    pub_contexts: &[PublicDecryptionContextSimple<E>],
     ciphertext: &Ciphertext<E, T>,
-    decryption_shares: &Vec<DecryptionShareSimple<E>>,
+    decryption_shares: &[DecryptionShareSimple<E>],
 ) -> bool {
     let blinded_key_shares = &pub_contexts
         .iter()

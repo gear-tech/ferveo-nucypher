@@ -42,6 +42,11 @@ pub mod rand_utils {
     pub use rand::Rng;
 }
 
+/// Re-exports all stuff from [ferveo_common::serialization].
+pub mod serialization {
+    pub use ferveo_common::serialization::*;
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// Ciphertext verification failed
@@ -64,6 +69,12 @@ pub enum Error {
     #[error(transparent)]
     ArkSerializeError(#[from] ark_serialize::SerializationError),
 
+    #[error(transparent)]
+    HexError(#[from] hex::FromHexError),
+
+    #[error("Trailing bytes after value: {0}")]
+    TrailingBytes(usize),
+
     #[cfg(feature = "parity-codec")]
     #[error(transparent)]
     ParityCodecError(#[from] parity_scale_codec::Error),
@@ -78,6 +89,7 @@ mod tests {
 
     use ark_ec::{CurveGroup, pairing::Pairing};
     use ark_std::{UniformRand, test_rng};
+    use clap::Parser;
     use ferveo_common::{FromBytes, ToBytes};
     use rand::seq::IteratorRandom;
 
@@ -86,6 +98,14 @@ mod tests {
     type E = ark_bls12_381::Bls12_381;
     type TargetField = <E as Pairing>::TargetField;
     type ScalarField = <E as Pairing>::ScalarField;
+
+    #[derive(Debug, Parser)]
+    struct ClapValueTypes {
+        #[arg(long)]
+        dkg_public_key: bls12_381::DkgPublicKey,
+        #[arg(long)]
+        public_decryption_context: bls12_381::PublicDecryptionContextSimple,
+    }
 
     #[test]
     fn ciphertext_serialization() {
@@ -105,6 +125,40 @@ mod tests {
             Ciphertext::from_bytes(&serialized).unwrap();
 
         assert_eq!(serialized, deserialized.to_bytes().unwrap())
+    }
+
+    #[test]
+    fn clap_value_types_round_trip_through_strings() {
+        let mut rng = test_rng();
+        let DealerOutput { public_key, private_contexts, .. } =
+            deal::<E>(3, 2, &mut rng);
+
+        let encoded_public_key = public_key.to_string();
+        assert_eq!(
+            encoded_public_key.parse::<DkgPublicKey<E>>().unwrap(),
+            public_key
+        );
+
+        let public_context = &private_contexts[0].public_decryption_contexts[0];
+        let encoded_public_context = public_context.to_string();
+        let decoded_public_context = encoded_public_context
+            .parse::<PublicDecryptionContextSimple<E>>()
+            .unwrap();
+        assert_eq!(decoded_public_context.to_string(), encoded_public_context);
+
+        let parsed = ClapValueTypes::try_parse_from([
+            "test",
+            "--dkg-public-key",
+            &encoded_public_key,
+            "--public-decryption-context",
+            &encoded_public_context,
+        ])
+        .unwrap();
+        assert_eq!(parsed.dkg_public_key, public_key);
+        assert_eq!(
+            parsed.public_decryption_context.to_string(),
+            encoded_public_context
+        );
     }
 
     fn test_ciphertext_validation_fails<E: Pairing>(
@@ -137,9 +191,7 @@ mod tests {
 
         let bad_aad = "bad aad".as_bytes();
         assert!(
-            contexts[0]
-                .create_share(&ciphertext.header().unwrap(), bad_aad)
-                .is_err()
+            contexts[0].create_share(&ciphertext.header(), bad_aad).is_err()
         );
     }
 
@@ -160,9 +212,7 @@ mod tests {
         // We need at least threshold shares to decrypt
         let decryption_shares: Vec<_> = contexts
             .iter()
-            .map(|c| {
-                c.create_share(&ciphertext.header().unwrap(), aad).unwrap()
-            })
+            .map(|c| c.create_share(&ciphertext.header(), aad).unwrap())
             .take(threshold)
             .collect();
         let selected_contexts =
@@ -202,9 +252,7 @@ mod tests {
 
         let decryption_shares: Vec<_> = contexts
             .iter()
-            .map(|c| {
-                c.create_share(&ciphertext.header().unwrap(), aad).unwrap()
-            })
+            .map(|c| c.create_share(&ciphertext.header(), aad).unwrap())
             .take(threshold)
             .collect();
         let selected_contexts =
@@ -242,7 +290,7 @@ mod tests {
             .map(|context| {
                 context
                     .create_share_precomputed(
-                        &ciphertext.header().unwrap(),
+                        &ciphertext.header(),
                         aad,
                         &selected_participants,
                     )
@@ -280,9 +328,7 @@ mod tests {
 
         let decryption_shares: Vec<_> = contexts
             .iter()
-            .map(|c| {
-                c.create_share(&ciphertext.header().unwrap(), aad).unwrap()
-            })
+            .map(|c| c.create_share(&ciphertext.header(), aad).unwrap())
             .collect();
 
         // In simple tDec variant, we verify decryption shares only after decryption fails.
@@ -322,14 +368,5 @@ mod tests {
             &pub_contexts[0].validator_public_key.encryption_key,
             &ciphertext,
         ));
-    }
-
-    #[test]
-    fn ctx_serde() {
-        let mut rng = test_rng();
-        let deal = deal::<E>(3, 2, &mut rng);
-        let ctx = deal.private_contexts.first().unwrap();
-        let serialized = serde_json::to_string_pretty(ctx).unwrap();
-        println!("{serialized}");
     }
 }
