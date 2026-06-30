@@ -45,6 +45,11 @@ pub mod rand_utils {
     pub use rand::Rng;
 }
 
+/// Reexports all the stuff from [ferveo_common::keypair].
+pub mod keypair_common {
+    pub use ferveo_common::keypair::*;
+}
+
 /// Re-exports all stuff from [ferveo_common::serialization].
 pub mod serialization {
     pub use ferveo_common::serialization::*;
