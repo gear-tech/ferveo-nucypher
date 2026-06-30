@@ -1,4 +1,5 @@
-use std::{fmt, str::FromStr};
+use alloc::vec::Vec;
+use core::{fmt, str::FromStr};
 
 use ark_ec::pairing::Pairing;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};

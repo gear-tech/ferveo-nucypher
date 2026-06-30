@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use crate::Result;
 
 /// Encoding contract for typed plaintext wrappers.

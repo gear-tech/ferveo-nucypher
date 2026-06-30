@@ -1,9 +1,10 @@
-use std::{cmp::Ordering, fmt::Formatter, io, ops::Mul};
+use alloc::{borrow::ToOwned, vec::Vec};
+use core::{cmp::Ordering, fmt, fmt::Formatter, ops::Mul};
 
 use ark_ec::{AffineRepr, CurveGroup, pairing::Pairing};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::{
-    UniformRand,
+    UniformRand, io,
     rand::{RngCore, SeedableRng, prelude::StdRng},
 };
 use generic_array::{
@@ -74,8 +75,8 @@ impl<E: Pairing> Ord for PublicKey<E> {
     }
 }
 
-impl<E: Pairing> std::fmt::Display for PublicKey<E> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl<E: Pairing> fmt::Display for PublicKey<E> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "PublicKey({:?}, {:?})",
@@ -133,13 +134,14 @@ impl<E: Pairing> Keypair<E> {
         Ok(Self::new(&mut rng))
     }
 
+    #[cfg(feature = "std")]
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
         Self::new(&mut rng)
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use super::*;
 

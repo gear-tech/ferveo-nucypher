@@ -1,5 +1,10 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
+
+extern crate alloc;
+
+use alloc::{boxed::Box, vec, vec::Vec};
 
 use ark_ec::{AffineRepr, CurveGroup, pairing::Pairing};
 use ark_ff::{FftField, Field, Zero};
@@ -358,7 +363,7 @@ pub fn toeplitz_mul<E: Pairing, const NORMALIZE: bool>(
     ))
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use ark_ec::pairing::Pairing;
     use ark_ff::{One, Zero};

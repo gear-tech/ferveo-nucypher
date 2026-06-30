@@ -23,7 +23,7 @@ pub fn htp_bls12381_g2(msg: &[u8]) -> ark_bls12_381::G2Affine {
     hasher.hash(msg).expect("hash-to-curve")
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use ark_bls12_381::{Fq, Fq2, G2Affine};
     use ark_ff::PrimeField;

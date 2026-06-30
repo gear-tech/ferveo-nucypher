@@ -1,4 +1,5 @@
-use std::marker::PhantomData;
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 
 use ark_ec::{AffineRepr, CurveGroup, pairing::Pairing};
 use ark_ff::{One, UniformRand};
@@ -330,7 +331,7 @@ fn construct_tag_hash<E: Pairing>(
     hash_to_g2(&hash_input)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use std::marker::PhantomData;
 

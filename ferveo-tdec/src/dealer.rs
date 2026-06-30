@@ -1,4 +1,5 @@
-use std::ops::Mul;
+use alloc::{vec, vec::Vec};
+use core::ops::Mul;
 
 use ark_ec::{AffineRepr, CurveGroup, pairing::Pairing};
 use ark_ff::{UniformRand, Zero};

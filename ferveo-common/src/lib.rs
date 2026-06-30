@@ -1,3 +1,7 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
+
 pub mod keypair;
 pub mod serialization;
 
@@ -14,4 +18,4 @@ pub enum Error {
     InvalidSeedLength(usize),
 }
 
-type Result<T> = std::result::Result<T, Error>;
+type Result<T> = core::result::Result<T, Error>;

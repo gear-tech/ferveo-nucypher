@@ -1,4 +1,5 @@
-use std::ops::Mul;
+use alloc::vec::Vec;
+use core::ops::Mul;
 
 use ark_ec::{CurveGroup, PrimeGroup, pairing::Pairing};
 use ark_ff::Field;
