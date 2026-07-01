@@ -1,5 +1,7 @@
 #![allow(non_snake_case)]
 
+use alloc::{vec, vec::Vec};
+
 use ark_ec::pairing::Pairing;
 use ark_ff::{Field, One, PrimeField, Zero};
 use ferveo_common::serialization;
@@ -89,7 +91,7 @@ pub fn share_combine_precomputed<E: Pairing>(
     SharedSecret(shared_secret)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     type ScalarField =
         <ark_bls12_381::Bls12_381 as ark_ec::pairing::Pairing>::ScalarField;

@@ -1,11 +1,15 @@
 //! This adds a few utility functions for serializing and deserializing
 //! [arkworks](http://arkworks.rs/) types that implement [CanonicalSerialize] and [CanonicalDeserialize].
 
+use alloc::vec::Vec;
+
 use ark_ec::pairing::Pairing;
 use ark_serialize::{
     CanonicalDeserialize, CanonicalSerialize, SerializationError,
 };
-use serde::{Deserialize, Deserializer, Serialize, Serializer, de, ser};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+use serde::{Deserializer, Serializer, de, ser};
 
 #[cfg(feature = "parity-codec")]
 use parity_scale_codec::{Decode, Encode, Error as CodecError, Input, Output};
@@ -149,6 +153,8 @@ pub mod ark_serde_hex {
 
 #[cfg(feature = "parity-codec")]
 pub mod parity_codec_helpers {
+    use alloc::vec::Vec;
+
     use super::{
         CanonicalDeserialize, CanonicalSerialize, CodecError, Decode, Encode,
         Input, Output, Pairing, deserialize_point, serialize_point,
@@ -220,27 +226,31 @@ pub use ark_serde_default as ark_serde_configured;
 // TODO: Trait aliases are experimental
 // trait ByteSerializable = ToBytes + FromBytes;
 
+#[cfg(feature = "std")]
 pub trait ToBytes {
     fn to_bytes(&self) -> Result<Vec<u8>, bincode::Error>;
 }
 
+#[cfg(feature = "std")]
 pub trait FromBytes: Sized {
     fn from_bytes(bytes: &[u8]) -> Result<Self, bincode::Error>;
 }
 
+#[cfg(feature = "std")]
 impl<T: Serialize> ToBytes for T {
     fn to_bytes(&self) -> Result<Vec<u8>, bincode::Error> {
         bincode::serialize(self)
     }
 }
 
+#[cfg(feature = "std")]
 impl<T: for<'de> Deserialize<'de>> FromBytes for T {
     fn from_bytes(bytes: &[u8]) -> Result<Self, bincode::Error> {
         bincode::deserialize(bytes)
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod test {
     use ark_bls12_381::Bls12_381;
     use ark_ec::{AffineRepr, pairing::Pairing};
@@ -310,7 +320,7 @@ mod test {
     }
 }
 
-#[cfg(all(test, feature = "ark-serde-hex"))]
+#[cfg(all(test, feature = "ark-serde-hex", feature = "std"))]
 mod tests_ark_hex {
 
     use std::ops::Mul;

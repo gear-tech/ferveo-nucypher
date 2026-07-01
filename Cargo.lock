@@ -957,7 +957,7 @@ dependencies = [
  "rand 0.8.6",
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -985,7 +985,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "subproductdomain-gear",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
  "zeroize",
 ]
 
@@ -1014,7 +1014,7 @@ dependencies = [
  "serde",
  "subproductdomain-gear",
  "test-case",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
  "zeroize",
 ]
 

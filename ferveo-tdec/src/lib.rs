@@ -1,4 +1,7 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 #![warn(rust_2018_idioms)]
+
+extern crate alloc;
 use ark_ec::pairing::Pairing;
 
 mod ciphertext;
@@ -42,6 +45,11 @@ pub mod rand_utils {
     pub use rand::Rng;
 }
 
+/// Reexports all the stuff from [ferveo_common::keypair].
+pub mod keypair_common {
+    pub use ferveo_common::keypair::*;
+}
+
 /// Re-exports all stuff from [ferveo_common::serialization].
 pub mod serialization {
     pub use ferveo_common::serialization::*;
@@ -63,27 +71,47 @@ pub enum Error {
     #[error("Symmetric encryption failed")]
     SymmetricEncryptionError(chacha20poly1305::aead::Error),
 
+    #[cfg(feature = "std")]
     #[error(transparent)]
     BincodeError(#[from] bincode::Error),
 
-    #[error(transparent)]
-    ArkSerializeError(#[from] ark_serialize::SerializationError),
+    #[error("Ark serialization error: {0}")]
+    ArkSerializeError(ark_serialize::SerializationError),
 
-    #[error(transparent)]
-    HexError(#[from] hex::FromHexError),
+    #[error("Hex decoding error: {0}")]
+    HexError(hex::FromHexError),
 
     #[error("Trailing bytes after value: {0}")]
     TrailingBytes(usize),
 
     #[cfg(feature = "parity-codec")]
-    #[error(transparent)]
-    ParityCodecError(#[from] parity_scale_codec::Error),
+    #[error("SCALE codec error: {0}")]
+    ParityCodecError(parity_scale_codec::Error),
+}
+
+impl From<ark_serialize::SerializationError> for Error {
+    fn from(error: ark_serialize::SerializationError) -> Self {
+        Self::ArkSerializeError(error)
+    }
+}
+
+impl From<hex::FromHexError> for Error {
+    fn from(error: hex::FromHexError) -> Self {
+        Self::HexError(error)
+    }
+}
+
+#[cfg(feature = "parity-codec")]
+impl From<parity_scale_codec::Error> for Error {
+    fn from(error: parity_scale_codec::Error) -> Self {
+        Self::ParityCodecError(error)
+    }
 }
 
 pub type DomainPoint<E> = <E as Pairing>::ScalarField;
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = core::result::Result<T, Error>;
 
-#[cfg(all(test, feature = "parity-codec"))]
+#[cfg(all(test, feature = "parity-codec", feature = "std"))]
 mod tests {
     use std::ops::Mul;
 

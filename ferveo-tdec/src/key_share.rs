@@ -1,4 +1,5 @@
-use std::{collections::HashMap, fmt, ops::Mul, str::FromStr};
+use alloc::vec::Vec;
+use core::{fmt, ops::Mul, str::FromStr};
 
 use ark_ec::{CurveGroup, pairing::Pairing};
 use ark_ff::Field;
@@ -91,17 +92,21 @@ impl<E: Pairing> BlindedKeyShare<E> {
 
     /// In precomputed variant, we offload some of the decryption related computation to the server-side:
     /// We use the `prepare_combine_simple` function to precompute the lagrange coefficients
-    pub fn create_decryption_share_precomputed(
+    pub fn create_decryption_share_precomputed<'a, I>(
         &self,
         ciphertext_header: &CiphertextHeader<E>,
         aad: &[u8],
         validator_keypair: &Keypair<E>,
         share_index: u32,
-        domain_points_map: &HashMap<u32, DomainPoint<E>>,
-    ) -> Result<DecryptionSharePrecomputed<E>> {
+        domain_points_map: I,
+    ) -> Result<DecryptionSharePrecomputed<E>>
+    where
+        I: IntoIterator<Item = (&'a u32, &'a DomainPoint<E>)>,
+        E::ScalarField: 'a,
+    {
         // We need to turn the domain points into a vector, and sort it by share index
         let mut domain_points = domain_points_map
-            .iter()
+            .into_iter()
             .map(|(share_index, domain_point)| (*share_index, *domain_point))
             .collect::<Vec<_>>();
         domain_points.sort_by_key(|(share_index, _)| *share_index);
@@ -120,15 +125,9 @@ impl<E: Pairing> BlindedKeyShare<E> {
         // Given that we sorted the domain points by share index, the first element in the vector
         // will correspond to the smallest share index, second to the second smallest, and so on
 
-        let sorted_share_indices = domain_points
-            .iter()
-            .enumerate()
-            .map(|(adjusted_share_index, (share_index, _))| {
-                (*share_index, adjusted_share_index)
-            })
-            .collect::<HashMap<u32, usize>>();
-        let adjusted_share_index =
-            *sorted_share_indices.get(&share_index).unwrap();
+        let adjusted_share_index = domain_points
+            .binary_search_by_key(&share_index, |(share_index, _)| *share_index)
+            .unwrap();
 
         // Finally, pick the lagrange coefficient for the current share index
         let lagrange_coeff = &lagrange_coeffs[adjusted_share_index];

@@ -7,11 +7,21 @@ authors.workspace = true
 description = "Implements subproduct domain algorithm"
 
 [dependencies]
-anyhow = { workspace = true }
-ark-ec = { workspace = true }
-ark-ff = { workspace = true }
-ark-poly = { workspace = true }
-ark-std = { workspace = true }
+anyhow = { workspace = true, default-features = false }
+ark-ec = { workspace = true, default-features = false }
+ark-ff = { workspace = true, default-features = false }
+ark-poly = { workspace = true, default-features = false }
+ark-std = { workspace = true, default-features = false }
 
 [dev-dependencies]
 ark-bls12-381 = { workspace = true }
+
+[features]
+default = []
+std = [
+    "anyhow/std",
+    "ark-ec/std",
+    "ark-ff/std",
+    "ark-poly/std",
+    "ark-std/std",
+]

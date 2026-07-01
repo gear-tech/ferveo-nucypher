@@ -1,5 +1,7 @@
 //! BLS12-381 convenience API.
 
+use alloc::vec::Vec;
+
 pub type E = ark_bls12_381::Bls12_381;
 
 pub type G1Prepared = <E as ark_ec::pairing::Pairing>::G1Prepared;

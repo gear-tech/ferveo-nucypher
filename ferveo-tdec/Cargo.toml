@@ -13,32 +13,32 @@ bench = false
 
 [dependencies]
 # Workspace dependencies
-subproductdomain.workspace = true
-ferveo-common.workspace = true
+subproductdomain = { workspace = true, default-features = false }
+ferveo-common = { workspace = true, default-features = false }
 
 # Arkworks ecosystem dependencies
-ark-bls12-381 = { workspace = true }
-ark-ec = { workspace = true }
-ark-ff = { workspace = true }
-ark-poly = { workspace = true }
-ark-serialize = { workspace = true }
-ark-std = { workspace = true }
+ark-bls12-381 = { workspace = true, default-features = false, features = ["curve"] }
+ark-ec = { workspace = true, default-features = false }
+ark-ff = { workspace = true, default-features = false }
+ark-poly = { workspace = true, default-features = false }
+ark-serialize = { workspace = true, default-features = false }
+ark-std = { workspace = true, default-features = false }
 
-bincode = { workspace = true }
-chacha20poly1305 = { workspace = true }
-hex = { workspace = true }
-itertools = { workspace = true }
-rand = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
-sha2 = { workspace = true }
+bincode = { workspace = true, optional = true }
+chacha20poly1305 = { workspace = true, default-features = false, features = ["alloc"] }
+hex = { workspace = true, default-features = false, features = ["alloc"] }
+itertools = { workspace = true, default-features = false, features = ["use_alloc"] }
+rand = { workspace = true, default-features = false, features = ["alloc"] }
+serde = { workspace = true, default-features = false, features = ["alloc", "derive"] }
+sha2 = { workspace = true, default-features = false }
 thiserror = { workspace = true }
-zeroize = { workspace = true, features = ["derive"] }
+zeroize = { workspace = true, default-features = false, features = ["alloc", "derive"] }
 
 # Optional dependencies
 parity-scale-codec = { workspace = true, optional = true, features = [
     "derive",
 ] }
-const-hex = { workspace = true, optional = true, features = ["serde"] }
+const-hex = { workspace = true, optional = true, features = ["alloc", "serde"] }
 
 [dev-dependencies]
 clap = { version = "4.6", features = ["derive"] }
@@ -61,6 +61,28 @@ harness = false
 
 [features]
 default = ["bls12_381", "parity-codec"]
+
+# Enables Rust standard library support.
+std = [
+    "dep:bincode",
+    "ark-bls12-381/std",
+    "ark-ec/std",
+    "ark-ff/std",
+    "ark-poly/std",
+    "ark-serialize/std",
+    "ark-std/std",
+    "chacha20poly1305/std",
+    "const-hex?/std",
+    "ferveo-common/std",
+    "hex/std",
+    "itertools/use_std",
+    "parity-scale-codec?/std",
+    "rand/std",
+    "serde/std",
+    "sha2/std",
+    "subproductdomain/std",
+    "zeroize/std",
+]
 
 # Enables support BLS12-381 type aliases.
 bls12_381 = []

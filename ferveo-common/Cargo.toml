@@ -7,15 +7,15 @@ authors.workspace = true
 description = "Common types and traits for Ferveo"
 
 [dependencies]
-ark-ec = { workspace = true }
-ark-serialize = { workspace = true, features = ["derive"] }
-ark-std = { workspace = true }
-bincode = { workspace = true }
+ark-ec = { workspace = true, default-features = false }
+ark-serialize = { workspace = true, default-features = false, features = ["derive"] }
+ark-std = { workspace = true, default-features = false }
+bincode = { workspace = true, optional = true }
 generic-array = { workspace = true }
-rand = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
+rand = { workspace = true, default-features = false, features = ["alloc", "std_rng"] }
+serde = { workspace = true, default-features = false, features = ["alloc", "derive"] }
 thiserror.workspace = true
-const-hex = { workspace = true, optional = true, features = ["serde"] }
+const-hex = { workspace = true, optional = true, features = ["alloc", "serde"] }
 parity-scale-codec = { workspace = true, optional = true }
 
 
@@ -26,6 +26,17 @@ ark-ff.workspace = true
 
 [features]
 default = []
+
+std = [
+    "dep:bincode",
+    "ark-ec/std",
+    "ark-serialize/std",
+    "ark-std/std",
+    "const-hex?/std",
+    "parity-scale-codec?/std",
+    "rand/std",
+    "serde/std",
+]
 
 # Enables serialize/deserialize arkworks types with hex.
 ark-serde-hex = ["dep:const-hex"]
