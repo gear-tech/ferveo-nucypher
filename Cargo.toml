@@ -3,16 +3,16 @@ resolver = "3"
 members = ["ferveo", "ferveo-common", "ferveo-tdec", "subproductdomain"]
 
 [workspace.package]
-version = "0.7.0"
+version = "0.8.0"
 edition = "2024"
 license = "GPL-3.0"
 authors = ["Dmitry Kuzmin"]
 
 [workspace.dependencies]
 # workspace packages
-subproductdomain = { path = "subproductdomain", package = "subproductdomain-gear", version = "0.7.0", default-features = false }
-ferveo-common = { path = "ferveo-common", package = "ferveo-gear-common", version = "0.7.0", default-features = false }
-ferveo-tdec = { path = "ferveo-tdec", package = "ferveo-gear-tdec", version = "0.7.0", default-features = false }
+subproductdomain = { path = "subproductdomain", package = "subproductdomain-gear", version = "0.8.0", default-features = false }
+ferveo-common = { path = "ferveo-common", package = "ferveo-gear-common", version = "0.8.0", default-features = false }
+ferveo-tdec = { path = "ferveo-tdec", package = "ferveo-gear-tdec", version = "0.8.0", default-features = false }
 
 anyhow = { version = "1.0.47", default-features = false }
 ark-bls12-381 = { version = "0.5", default-features = false }
